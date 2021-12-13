@@ -56,7 +56,6 @@ class MainActivity : AppCompatActivity() {
         val SUNION_SERVICE_UUID = UUID.fromString("fc3d8cf8-4ddc-7ade-1dd9-2497851131d7")
         private const val DATA = "DATA"
         private const val MY_LOCK_QRCODE = "MY_LOCK_QRCODE"
-        private const val MY_LOCK_KEYTWO = "MY_LOCK_KEYTWO"
         private const val MY_LOCK_TOKEN = "MY_LOCK_KEYTWO"
     }
     private var mBluetoothManager: BluetoothManager? = null
@@ -76,60 +75,60 @@ class MainActivity : AppCompatActivity() {
 
 
         override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        mHandler = Handler()
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+            super.onCreate(savedInstanceState)
+            setContentView(R.layout.activity_main)
+            mHandler = Handler()
+            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
-        // Alternative to "onActivityResult", because that is "deprecated"
-        mQrResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if(it.resultCode == Activity.RESULT_OK) {
-                val result = IntentIntegrator.parseActivityResult(it.resultCode, it.data)
+            // Alternative to "onActivityResult", because that is "deprecated"
+            mQrResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                if(it.resultCode == Activity.RESULT_OK) {
+                    val result = IntentIntegrator.parseActivityResult(it.resultCode, it.data)
 
-                if(result.contents != null) {
-                    Log.d("TAG",result.contents)
-                    cleanLog()
-                    mQRcode = result.contents
-                    decryptQRcode(result.contents) {}
+                    if(result.contents != null) {
+                        Log.d("TAG",result.contents)
+                        cleanLog()
+                        mQRcode = result.contents
+                        decryptQRcode(result.contents) {}
 
+                    }
                 }
             }
-        }
 
 
 
-//        log_ble_scan.movementMethod = ScrollingMovementMethod.getInstance()
-        log_tv.movementMethod = ScrollingMovementMethod.getInstance()
+    //        log_ble_scan.movementMethod = ScrollingMovementMethod.getInstance()
+            log_tv.movementMethod = ScrollingMovementMethod.getInstance()
 
-        scan_btn.setOnClickListener {
-            startScanner()
-        }
-        ble_scan_btn.setOnClickListener {
-            if(checkPermissions()!=true)return@setOnClickListener
-            if(checkBTenable()!=true)return@setOnClickListener
-            checkToConnect()
-        }
-        ble_connect_btn.setOnClickListener {
-            BluetoothDeviceConnByGatt(mBluetoothDevice)
-        }
-        setup_btn.setOnClickListener {
-            setup ()
-        }
-        sentC0_btn.setOnClickListener {
-            sendC0()
-        }
+            scan_btn.setOnClickListener {
+                saveData()
+    //            startScanner()
+            }
+            ble_scan_btn.setOnClickListener {
+                if(checkPermissions()!=true)return@setOnClickListener
+                if(checkBTenable()!=true)return@setOnClickListener
+                checkToConnect()
+            }
+            ble_connect_btn.setOnClickListener {
+                BluetoothDeviceConnByGatt(mBluetoothDevice)
+            }
+//            setup_btn.setOnClickListener {
+//                setup ()
+//            }
+            sentC0_btn.setOnClickListener {
+                sendC0()
+            }
+
             sentD6_btn.setOnClickListener {
-            sendD6(keyTwo?:return@setOnClickListener)
-
-        }
+                sendD6()
+            }
             sentD7_btn.setOnClickListener {
-            sendD7()
+                sendD7()
+            }
+            sentC7_btn.setOnClickListener {
+                sendC7()
 
-        }
-        sentC7_btn.setOnClickListener {
-            sendC7()
-
-        }
+            }
             readData()
             ll_my_lock.setOnClickListener {
                 readData()
@@ -184,12 +183,9 @@ class MainActivity : AppCompatActivity() {
     private fun sendC1(keyTwo: ByteArray) {
         val sunion_service = getGattService(SUNION_SERVICE_UUID)
         val notify_characteristic = sunion_service?.getCharacteristic(NOTIFICATION_CHARACTERISTIC)
-        val keyOne = Base64.decode(mLockConnectionInfo?.keyOne, Base64.DEFAULT)
-//        val permanentToken = Base64.decode(mLockConnectionInfo?.permanentToken, Base64.DEFAULT)
         val permanentToken = Base64.decode(mPermanentToken, Base64.DEFAULT)
         isLockFromSharing = mLockConnectionInfo?.sharedFrom != null && mLockConnectionInfo?.sharedFrom?.isNotBlank() ?: false
         notify_characteristic?.value = createCommand(0xC1, keyTwo,permanentToken)
-//        showLog("\napp writeC1: ${notify_characteristic?.value}")
         Log.d("TAG","\napp writeC1: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
@@ -207,8 +203,6 @@ class MainActivity : AppCompatActivity() {
     private fun sendC7() {
         val sunion_service = getGattService(SUNION_SERVICE_UUID)
         val notify_characteristic = sunion_service?.getCharacteristic(NOTIFICATION_CHARACTERISTIC)
-        val keyOne = Base64.decode(mLockConnectionInfo?.keyOne, Base64.DEFAULT)
-        val permanentToken = Base64.decode(mLockConnectionInfo?.oneTimeToken, Base64.DEFAULT)
         isLockFromSharing = mLockConnectionInfo?.sharedFrom != null && mLockConnectionInfo?.sharedFrom?.isNotBlank() ?: false
         notify_characteristic?.value = createCommand(0xC7, keyTwo?:return, stringCodeToHex("0000"))
 //        showLog("\napp writeC1: ${notify_characteristic?.value}")
@@ -224,22 +218,16 @@ class MainActivity : AppCompatActivity() {
             ?: throw IllegalArgumentException("Invalid user code string")
     }
 
-    private fun sendD6(keyTwo: ByteArray) {
+    private fun sendD6() {
         val sunion_service = getGattService(SUNION_SERVICE_UUID)
         val notify_characteristic = sunion_service?.getCharacteristic(NOTIFICATION_CHARACTERISTIC)
-        val keyOne = Base64.decode(mLockConnectionInfo?.keyOne, Base64.DEFAULT)
-        val permanentToken = Base64.decode(mPermanentToken, Base64.DEFAULT)
-
-        notify_characteristic?.value = createCommand(0xD6, keyTwo)
+        notify_characteristic?.value = createCommand(0xD6, keyTwo?:return)
         showLog("\napp writeD6: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
     private fun sendD7() {
         val sunion_service = getGattService(SUNION_SERVICE_UUID)
         val notify_characteristic = sunion_service?.getCharacteristic(NOTIFICATION_CHARACTERISTIC)
-        val keyOne = Base64.decode(mLockConnectionInfo?.keyOne, Base64.DEFAULT)
-        val permanentToken = Base64.decode(mPermanentToken, Base64.DEFAULT)
-
         notify_characteristic?.value = createCommand(0xD7, keyTwo?:return, byteArrayOf(0x01))
         showLog("\napp writeD7: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
@@ -451,7 +439,7 @@ class MainActivity : AppCompatActivity() {
                 // A Bluetooth device was found
                 // Getting device information from the intent
                 val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                showLogBT("scan: ${device?.address}")
+//                showLogBT("scan: ${device?.address}")
             }
         }
     }
@@ -595,7 +583,7 @@ class MainActivity : AppCompatActivity() {
                     generateKeyTwo(randomNumberOne?:return,resolveC0(keyOne,characteristic.value)){
                         keyTwo = it
 //                        showLog("C0 notyfy ramNum2\nApp use it to generateKeyTwo = $keyTwo")
-                        if((mLockConnectionInfo?.permanentToken?:return@generateKeyTwo).isBlank())sendC1withOTToken(it)
+                        if((mPermanentToken?:return@generateKeyTwo).isBlank())sendC1withOTToken(it)
                         else sendC1(it)
                     }
 
@@ -633,7 +621,7 @@ class MainActivity : AppCompatActivity() {
                     val mLockSetting = resolveD6(keyTwo?:return, characteristic.value)
                     val islocked = if(mLockSetting.status==0)"locked" else "unlock"
                     this@MainActivity.runOnUiThread {
-                        showLog("D6 notyfy Lock's setting: ${islocked}")
+                        showLog("D6 notyfy Lock's setting: ${mLockSetting}")
                     }
                 }
                 0xE5 -> {
@@ -641,14 +629,14 @@ class MainActivity : AppCompatActivity() {
                         val permanentToken = extractToken(resolveE5(bytes))
                         mPermanentToken = (permanentToken as DeviceToken.PermanentToken).token
                     }
-
+                    saveData()
                 }
                 0xEF -> {
 //                        decrypt(keyTwo?:return, characteristic.value)?.let { bytes ->
 //                            val permanentToken = extractToken(resolveE5(bytes))
 //                            mPermanentToken = (permanentToken as DeviceToken.PermanentToken).token
 //                        }
-                    showLog("EF")
+                    this@MainActivity.runOnUiThread {showLog("EF")}
 
                 }
             }
@@ -974,29 +962,26 @@ class MainActivity : AppCompatActivity() {
     }
     private lateinit var settings: SharedPreferences
     private fun readData() {
-        settings = getSharedPreferences(DATA, 0)
+        settings = this.getSharedPreferences(DATA, 0)
         mQRcode = settings.getString(MY_LOCK_QRCODE, "")
-        keyTwo = Base64.decode(settings.getString(MY_LOCK_KEYTWO, ""), Base64.DEFAULT)
-//        keyTwo = byteArrayOf(-91, 6, 117, -55, 95, 15, 83, -54, 18, -79, -3, 45, -96, -13, -63, 11)
         mPermanentToken = settings.getString(MY_LOCK_TOKEN, "")
         if(mQRcode.isNullOrBlank())return
         decryptQRcode(mQRcode?:return){
             tv_my_lock_mac.setText(mLockConnectionInfo?.macAddress)
-            tv_my_lock_k2.setText(settings.getString(MY_LOCK_KEYTWO, ""))
+            tv_my_lock_tk.setText(settings.getString(MY_LOCK_TOKEN, ""))
         }
+        println("read k2: ${keyTwo?.toHex()}")
 
     }
 
+
     private fun saveData() {
-        settings = getSharedPreferences(DATA, 0)
+        settings = this.getSharedPreferences(DATA, 0)
         settings.edit()
             .putString(MY_LOCK_QRCODE, mQRcode)
-            .putString(MY_LOCK_KEYTWO, Base64.encodeToString(
-                keyTwo,0,16,
-                Base64.DEFAULT
-            ))
             .putString(MY_LOCK_TOKEN, mPermanentToken)
-            .apply()
+            .commit()
+        println("store k2: ${keyTwo?.toHex()}")
     }
 }
 

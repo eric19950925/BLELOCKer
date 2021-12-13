@@ -94,9 +94,9 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="my lock's key two:"/>
+            android:text="my lock's token:"/>
         <TextView
-            android:id="@+id/tv_my_lock_k2"
+            android:id="@+id/tv_my_lock_tk"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
