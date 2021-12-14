@@ -32,6 +32,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 
 import android.bluetooth.BluetoothGattService
 import android.content.*
+import androidx.navigation.findNavController
 import com.example.blelocker.entity.DeviceToken
 import com.example.blelocker.entity.LockConfig
 import com.example.blelocker.entity.LockConnectionInformation
@@ -48,15 +49,15 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var mQrResultLauncher : ActivityResultLauncher<Intent>
+
     companion object {
         const val CIPHER_MODE = "AES/ECB/NoPadding"
         const val BARCODE_KEY = "SoftChefSunion65"
         val NOTIFICATION_CHARACTERISTIC = UUID.fromString("de915dce-3539-61ea-ade7-d44a2237601f")
         val SUNION_SERVICE_UUID = UUID.fromString("fc3d8cf8-4ddc-7ade-1dd9-2497851131d7")
-        private const val DATA = "DATA"
-        private const val MY_LOCK_QRCODE = "MY_LOCK_QRCODE"
-        private const val MY_LOCK_TOKEN = "MY_LOCK_KEYTWO"
+        const val DATA = "DATA"
+        const val MY_LOCK_QRCODE = "MY_LOCK_QRCODE"
+        const val MY_LOCK_TOKEN = "MY_LOCK_KEYTWO"
     }
     private var mBluetoothManager: BluetoothManager? = null
     private var mBluetoothLeScanner: BluetoothLeScanner? = null
@@ -80,30 +81,6 @@ class MainActivity : AppCompatActivity() {
             mHandler = Handler()
             mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
-            // Alternative to "onActivityResult", because that is "deprecated"
-            mQrResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                if(it.resultCode == Activity.RESULT_OK) {
-                    val result = IntentIntegrator.parseActivityResult(it.resultCode, it.data)
-
-                    if(result.contents != null) {
-                        Log.d("TAG",result.contents)
-                        cleanLog()
-                        mQRcode = result.contents
-                        decryptQRcode(result.contents) {}
-
-                    }
-                }
-            }
-
-
-
-    //        log_ble_scan.movementMethod = ScrollingMovementMethod.getInstance()
-            log_tv.movementMethod = ScrollingMovementMethod.getInstance()
-
-            scan_btn.setOnClickListener {
-                saveData()
-    //            startScanner()
-            }
             ble_scan_btn.setOnClickListener {
                 if(checkPermissions()!=true)return@setOnClickListener
                 if(checkBTenable()!=true)return@setOnClickListener
@@ -129,16 +106,19 @@ class MainActivity : AppCompatActivity() {
                 sendC7()
 
             }
-            readData()
-            ll_my_lock.setOnClickListener {
-                readData()
-            }
+
+
 //        bt_connect_btn.setOnClickListener {
 //            if(checkPermissions()!=true)return@setOnClickListener
 //            if(checkBTenable()!=true)return@setOnClickListener
 //            checkToConnectBT()
 //        }
 
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+
+        return findNavController(R.id.my_nav_host_fragment).navigateUp()
     }
 
     override fun onPause() {
@@ -222,14 +202,14 @@ class MainActivity : AppCompatActivity() {
         val sunion_service = getGattService(SUNION_SERVICE_UUID)
         val notify_characteristic = sunion_service?.getCharacteristic(NOTIFICATION_CHARACTERISTIC)
         notify_characteristic?.value = createCommand(0xD6, keyTwo?:return)
-        showLog("\napp writeD6: ${notify_characteristic?.value}")
+//        showLog("\napp writeD6: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
     private fun sendD7() {
         val sunion_service = getGattService(SUNION_SERVICE_UUID)
         val notify_characteristic = sunion_service?.getCharacteristic(NOTIFICATION_CHARACTERISTIC)
         notify_characteristic?.value = createCommand(0xD7, keyTwo?:return, byteArrayOf(0x01))
-        showLog("\napp writeD7: ${notify_characteristic?.value}")
+//        showLog("\napp writeD7: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
 
@@ -462,7 +442,7 @@ class MainActivity : AppCompatActivity() {
             startActivityForResult(enableBtIntent, 124)
         }
 
-        showLog("current macAddress: ${mLockConnectionInfo?.macAddress}")
+//        showLog("current macAddress: ${mLockConnectionInfo?.macAddress}")
 
         //work...need lacation premission, and sunion's lock is bt not ble
         mBluetoothLeScanner!!.startScan(mScanCallback) // 開始搜尋
@@ -486,7 +466,7 @@ class MainActivity : AppCompatActivity() {
 
             if (result?.device?.address == mLockConnectionInfo?.macAddress) {
 
-                showLog("Find device: ${result?.device?.name}")
+//                showLog("Find device: ${result?.device?.name}")
 
 //                mBluetoothDevice = result?.device
                 BluetoothDeviceConnByGatt(result?.device)
@@ -523,10 +503,10 @@ class MainActivity : AppCompatActivity() {
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
             when(status){
                 0 -> when(newState){
-                    2 -> this@MainActivity.runOnUiThread {showLog("GATT連線成功")}
-                    else -> this@MainActivity.runOnUiThread {showLog("GATT連線中斷")}
+                    2 -> this@MainActivity.runOnUiThread {/*showLog("GATT連線成功")*/}
+                    else -> this@MainActivity.runOnUiThread {/*showLog("GATT連線中斷")*/}
                 }
-                else -> this@MainActivity.runOnUiThread {showLog("GATT連線出錯: ${status}")}
+                else -> this@MainActivity.runOnUiThread {/*showLog("GATT連線出錯: ${status}")*/}
             }
             if (status == BluetoothGatt.GATT_SUCCESS && newState == BluetoothProfile.STATE_CONNECTED) {
                 gatt?.discoverServices()
@@ -554,7 +534,7 @@ class MainActivity : AppCompatActivity() {
 //                    }
                     setup()
                 }
-                BluetoothGatt.GATT_FAILURE -> this@MainActivity.runOnUiThread {showLog("Service discovery Failure.")}
+                BluetoothGatt.GATT_FAILURE -> this@MainActivity.runOnUiThread {/*showLog("Service discovery Failure.")*/}
             }
         }
 
@@ -621,7 +601,7 @@ class MainActivity : AppCompatActivity() {
                     val mLockSetting = resolveD6(keyTwo?:return, characteristic.value)
                     val islocked = if(mLockSetting.status==0)"locked" else "unlock"
                     this@MainActivity.runOnUiThread {
-                        showLog("D6 notyfy Lock's setting: ${mLockSetting}")
+//                        showLog("D6 notyfy Lock's setting: ${mLockSetting}")
                     }
                 }
                 0xE5 -> {
@@ -636,7 +616,7 @@ class MainActivity : AppCompatActivity() {
 //                            val permanentToken = extractToken(resolveE5(bytes))
 //                            mPermanentToken = (permanentToken as DeviceToken.PermanentToken).token
 //                        }
-                    this@MainActivity.runOnUiThread {showLog("EF")}
+                    this@MainActivity.runOnUiThread {/*showLog("EF")*/}
 
                 }
             }
@@ -649,12 +629,12 @@ class MainActivity : AppCompatActivity() {
             status: Int
         ) {
             this@MainActivity.runOnUiThread {
-                showLog(
+                /*showLog(
                     "\nonDescriptorWrite \n" +
                             "--->in Characteristic\n" +
                             "--->[${descriptor?.uuid}]\n" +
                             "--->:${descriptor?.value}"
-                )
+                )*/
             }
         }
     }
@@ -801,33 +781,71 @@ class MainActivity : AppCompatActivity() {
     private fun decryptQRcode(scanString: String, function: () -> Unit) {
         val base64Decoded = Base64.decode(scanString, Base64.DEFAULT)
         val decrypted = decrypt(
-            BARCODE_KEY.toByteArray(),
+            MainActivity.BARCODE_KEY.toByteArray(),
             pad(base64Decoded, true)
         )
         decrypted?.let { result ->
             val data = String(result).replace(Regex("\\P{Print}"), "")
 //            Timber.d("decrypted qr code: $data")
-            showLog("\ndecrypted qr code: $data")
-            mLockConnectionInfo = LockConnectionInfo(data)
+//            showLog("\ndecrypted qr code: $data")
             function.invoke()
-            Log.d("TAG",mLockConnectionInfo.toString())
+//            Log.d("TAG",oneLockViewModel.mLockConnectionInfo.value.toString())
         } ?: throw IllegalArgumentException("Decrypted string is null")
     }
-
-    private fun LockConnectionInfo(jsonString: String): LockConnectionInformation {
+    fun decrypt(key: ByteArray, data: ByteArray): ByteArray? {
+        return try {
+            val cipher: Cipher = Cipher.getInstance(MainActivity.CIPHER_MODE)
+            val keySpec = SecretKeySpec(key, "AES")
+            cipher.init(Cipher.DECRYPT_MODE, keySpec)
+            val original: ByteArray = cipher.doFinal(data)
+//            showLog("\ndecrypted: \n${original.toHex()}")
+            original
+        } catch (exception: Exception) {
+//            showLog(exception.toString())
+            null
+        }
+    }
+    //加密,the size of key should be 16 bytes
+    fun encrypt(key: ByteArray, data: ByteArray): ByteArray? {
+        return try {
+            val cipher: Cipher = Cipher.getInstance(MainActivity.CIPHER_MODE)
+            val keySpec = SecretKeySpec(key, "AES")
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec)
+            val encrypted: ByteArray = cipher.doFinal(data)
+            Log.d("TAG","encrypted:\n${encrypted.toHex()}")
+            encrypted
+        } catch (exception: Exception) {
+//            Timber.d(exception)
+            Log.d("TAG",exception.toString())
+//            java.security.InvalidKeyException: Unsupported key size: 13 bytes
+            null
+        }
+    }
+    fun pad(data: ByteArray, padZero: Boolean = false): ByteArray {
+        if (data.isEmpty()) throw IllegalArgumentException("Invalid command.")
+        val padNumber = 16 - (data.size) % 16
+        val padBytes = if (padZero) ByteArray(padNumber) else Random.nextBytes(padNumber)
+//        println(padBytes.toHex())
+        return if (data.size % 16 == 0) {
+            data
+        } else {
+            data + padBytes
+        }
+    }
+    fun LockConnectionInfo(jsonString: String): LockConnectionInformation {
 //        if (parser.parse(jsonString).isJsonObject) {
-            val root = parser.parse(jsonString)
-            val oneTimeToken = root.asJsonObject?.get("T")?.asString
-                ?: throw IllegalArgumentException("Invalid Token")
-            val keyOne = root.asJsonObject?.get("K")?.asString
-                ?: throw IllegalArgumentException("Invalid AES_Key")
-            val macAddress =
-                root.asJsonObject?.get("A")?.asString?.chunked(2)?.joinToString(":") { it }
-                    ?: throw IllegalArgumentException("Invalid MAC_Address")
-            val isOwnerToken = root.asJsonObject?.has("F") == false
-            val isFrom =
-                if (!isOwnerToken) root.asJsonObject?.get("F")?.asString ?: "" else ""
-            val lockName = root.asJsonObject?.get("L")?.asString ?: "New_Lock"
+        val root = parser.parse(jsonString)
+        val oneTimeToken = root.asJsonObject?.get("T")?.asString
+            ?: throw IllegalArgumentException("Invalid Token")
+        val keyOne = root.asJsonObject?.get("K")?.asString
+            ?: throw IllegalArgumentException("Invalid AES_Key")
+        val macAddress =
+            root.asJsonObject?.get("A")?.asString?.chunked(2)?.joinToString(":") { it }
+                ?: throw IllegalArgumentException("Invalid MAC_Address")
+        val isOwnerToken = root.asJsonObject?.has("F") == false
+        val isFrom =
+            if (!isOwnerToken) root.asJsonObject?.get("F")?.asString ?: "" else ""
+        val lockName = root.asJsonObject?.get("L")?.asString ?: "New_Lock"
         return LockConnectionInformation(
             macAddress = macAddress,
             displayName = lockName,
@@ -853,113 +871,6 @@ class MainActivity : AppCompatActivity() {
 //            throw IllegalArgumentException("Invalid QR Code")
 //        }
     }
-//解密
-    fun decrypt(key: ByteArray, data: ByteArray): ByteArray? {
-        return try {
-            val cipher: Cipher = Cipher.getInstance(CIPHER_MODE)
-            val keySpec = SecretKeySpec(key, "AES")
-            cipher.init(Cipher.DECRYPT_MODE, keySpec)
-            val original: ByteArray = cipher.doFinal(data)
-//            showLog("\ndecrypted: \n${original.toHex()}")
-            original
-        } catch (exception: Exception) {
-            showLog(exception.toString())
-            null
-        }
-    }
-    //加密,the size of key should be 16 bytes
-    fun encrypt(key: ByteArray, data: ByteArray): ByteArray? {
-        return try {
-            val cipher: Cipher = Cipher.getInstance(CIPHER_MODE)
-            val keySpec = SecretKeySpec(key, "AES")
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec)
-            val encrypted: ByteArray = cipher.doFinal(data)
-            Log.d("TAG","encrypted:\n${encrypted.toHex()}")
-            encrypted
-        } catch (exception: Exception) {
-//            Timber.d(exception)
-    Log.d("TAG",exception.toString())
-//            java.security.InvalidKeyException: Unsupported key size: 13 bytes
-            null
-        }
-    }
-    fun pad(data: ByteArray, padZero: Boolean = false): ByteArray {
-        if (data.isEmpty()) throw IllegalArgumentException("Invalid command.")
-        val padNumber = 16 - (data.size) % 16
-        val padBytes = if (padZero) ByteArray(padNumber) else Random.nextBytes(padNumber)
-//        println(padBytes.toHex())
-        return if (data.size % 16 == 0) {
-            data
-        } else {
-            data + padBytes
-        }
-    }
-
-    fun ByteArray.toHex(): String {
-        return joinToString(", ") { "%02x".format(it).uppercase(Locale.getDefault()) }
-    }
-    fun hexToBytes(hexString: String): ByteArray? {
-        val hex: CharArray = hexString.toCharArray()
-        val length = hex.size / 2
-        val rawData = ByteArray(length)
-        for (i in 0 until length) {
-            val high = Character.digit(hex[i * 2], 16)
-            val low = Character.digit(hex[i * 2 + 1], 16)
-            var value = high shl 4 or low
-            if (value > 127) value -= 256
-            rawData[i] = value.toByte()
-        }
-        return rawData
-    }
-
-    private fun showLog(logText: String) {
-        try {
-            var log = log_tv.text.toString()
-
-            log = log +"${logText}\n"
-
-            log_tv.text = log
-        } catch (e: IOException) {
-        }
-    }
-
-    private fun showLogBT(logText: String) {
-        try {
-            var log = log_bt_scan.text.toString()
-
-            log = log +"${logText}\n"
-
-            log_bt_scan.text = log
-        } catch (e: IOException) {
-        }
-    }
-
-    private fun showLogBLE(logText: String) {
-        try {
-            var log = log_ble_scan.text.toString()
-
-            log = log +"${logText}\n"
-
-            log_ble_scan.text = log
-        } catch (e: IOException) {
-        }
-    }
-    private fun cleanLog() {
-        log_tv.text = ""
-        log_ble_scan.text = ""
-        log_bt_scan.text = ""
-    }
-
-    // Start the QR Scanner
-    private fun startScanner() {
-        val scanner = IntentIntegrator(this)
-        // QR Code Format
-        scanner.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-        // Set Text Prompt at Bottom of QR code Scanner Activity
-        scanner.setPrompt("QR Code Scanner Prompt Text")
-        // Start Scanner (don't use initiateScan() unless if you want to use OnActivityResult)
-        mQrResultLauncher.launch(scanner.createScanIntent())
-    }
     private lateinit var settings: SharedPreferences
     private fun readData() {
         settings = this.getSharedPreferences(DATA, 0)
@@ -967,8 +878,7 @@ class MainActivity : AppCompatActivity() {
         mPermanentToken = settings.getString(MY_LOCK_TOKEN, "")
         if(mQRcode.isNullOrBlank())return
         decryptQRcode(mQRcode?:return){
-            tv_my_lock_mac.setText(mLockConnectionInfo?.macAddress)
-            tv_my_lock_tk.setText(settings.getString(MY_LOCK_TOKEN, ""))
+
         }
         println("read k2: ${keyTwo?.toHex()}")
 

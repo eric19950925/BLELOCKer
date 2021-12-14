@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph_main"
+    app:startDestination="@id/one_lock_Fragment">
+
+    <fragment
+        android:id="@+id/one_lock_Fragment"
+        android:name="com.example.blelocker.View.OneLockFragment"
+        tools:layout="@layout/fragment_onelock">
+
+        <action
+            android:id="@+id/action_onelock_to_scan"
+            app:destination="@id/scan_Fragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/scan_Fragment"
+        android:name="com.example.blelocker.View.AddLock.ScanFragment"
+        tools:layout="@layout/fragment_scan">
+        <action
+            android:id="@+id/action_back_to_onelock"
+            app:destination="@id/one_lock_Fragment" />
+    </fragment>
+
+</navigation>
