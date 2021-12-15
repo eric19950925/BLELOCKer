@@ -39,7 +39,7 @@ class ScanFragment: BaseFragment() {
                     }
 
                 }
-            }else findNavController().popBackStack()
+            }else Navigation.findNavController(requireView()).navigate(R.id.action_back_to_onelock)
         }
         startScanner()
     }

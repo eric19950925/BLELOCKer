@@ -59,6 +59,7 @@ class OneLockFragment: BaseFragment() {
     var mQRcode: String?=null
 
     var mLockSetting: LockSetting?=null
+    var mGattStatus: Boolean?=null
 
     private val rotateAnimation = RotateAnimation(
         0f, 359f,
@@ -163,15 +164,19 @@ class OneLockFragment: BaseFragment() {
         mBluetoothManager = requireContext().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
         mBluetoothLeScanner = (mBluetoothManager?:return).adapter.bluetoothLeScanner
 
+        requireActivity().runOnUiThread {
+            oneLockViewModel.mLockBleStatus.value = true
+            mHandler = Handler()
+            mHandler?.postDelayed({
+                mBluetoothLeScanner?.stopScan(mScanCallback)
+                invalidateOptionsMenu(requireActivity())
+//            沒有在連gatt，藍芽scan已逾時
+                if (mBluetoothGatt == null) {
+                    oneLockViewModel.mLockBleStatus.value = false
+                }
+            }, 10000)
+        }
         mBluetoothLeScanner?.startScan(mScanCallback) // 開始搜尋
-        oneLockViewModel.mLockBleStatus.value = true
-        mHandler = Handler()
-        mHandler?.postDelayed({
-            mBluetoothLeScanner?.stopScan(mScanCallback)
-            invalidateOptionsMenu(requireActivity())
-            if(mBluetoothGatt == null){oneLockViewModel.mLockBleStatus.value = false}
-        }, 10000)
-
 
     }
     private val mScanCallback = object: ScanCallback() {
@@ -202,8 +207,9 @@ class OneLockFragment: BaseFragment() {
 
     override fun onPause() {
         Log.d("TAG","onPause")
-        //跳開啟藍芽提示會進來，若關閉scan會出錯
-        closeBLEGatt()
+        //跳開啟藍芽提示會進來，若關閉ble scan會出錯
+        //click btn will trigger here, so don't close gatt here.
+//        closeBLEGatt()
         super.onPause()
     }
 
@@ -233,13 +239,17 @@ class OneLockFragment: BaseFragment() {
 
     override fun onResume() {
         readSharedPreference()
+        //todo : auto ble conn
         Log.d("TAG","onResume")
         super.onResume()
     }
 
+    //todo:press back should leave this app
+
+
     private fun closeBLEGatt() {
         if (mBluetoothGatt != null) {
-            mBluetoothGatt?.disconnect()
+            mBluetoothGatt?.disconnect()//不知有無影響
             mBluetoothGatt?.close()
             mBluetoothAdapter?.cancelDiscovery()
             mBluetoothLeScanner?.stopScan(mScanCallback)
@@ -310,12 +320,22 @@ class OneLockFragment: BaseFragment() {
                         oneLockViewModel.mLockBleStatus.value = false
                         pauseScan()
                         closeBLEGatt()
+                        //133通常需要重啟手機藍芽
                         showLog("GATT連線出錯: ${status}")
                     }
                 }
             }
             if (status == BluetoothGatt.GATT_SUCCESS && newState == BluetoothProfile.STATE_CONNECTED) {
                 gatt?.discoverServices()
+                requireActivity().runOnUiThread {
+                    mHandler?.postDelayed({
+//            gatt探索逾時
+                        if(mGattStatus == null){
+                            oneLockViewModel.mLockBleStatus.value = false
+                            closeBLEGatt()
+                        }
+                    }, 10000)
+                }
             }
         }
 
@@ -338,9 +358,10 @@ class OneLockFragment: BaseFragment() {
 //                        allUUIDs.append("}")
 //                        this@MainActivity.runOnUiThread {showLog("onServicesDiscovered:$allUUIDs")}
 //                    }
+                    mGattStatus = true
                     setup()
                 }
-                BluetoothGatt.GATT_FAILURE -> requireActivity().runOnUiThread {/*showLog("Service discovery Failure.")*/}
+                BluetoothGatt.GATT_FAILURE -> requireActivity().runOnUiThread {showLog("Service discovery Failure.")}
             }
         }
 
@@ -413,7 +434,7 @@ class OneLockFragment: BaseFragment() {
                                 adminCode = "0000"
                             )
                         }
-                        oneLockViewModel.mLockConnectionInfo.value = newLockInfo
+                        requireActivity().runOnUiThread {oneLockViewModel.mLockConnectionInfo.value = newLockInfo}
 
                         Log.d("TAG","admin pincode had been set.")
                     }
@@ -594,9 +615,11 @@ class OneLockFragment: BaseFragment() {
         println("store QR: ${mQRcode}")
         mPermanentToken = mSharedPreferences.getString(MainActivity.MY_LOCK_TOKEN, "")
         if(mQRcode.isNullOrBlank())return
-        oneLockViewModel.decryptQRcode(mQRcode?:return){
-            tv_my_lock_mac.setText(oneLockViewModel.mLockConnectionInfo.value?.macAddress)
-            tv_my_lock_tk.setText(mSharedPreferences.getString(MainActivity.MY_LOCK_TOKEN, ""))
+        requireActivity().runOnUiThread {
+            oneLockViewModel.decryptQRcode(mQRcode?:return@runOnUiThread){
+                tv_my_lock_mac.setText(oneLockViewModel.mLockConnectionInfo.value?.macAddress)
+                tv_my_lock_tk.setText(mSharedPreferences.getString(MainActivity.MY_LOCK_TOKEN, ""))
+            }
         }
     }
 
