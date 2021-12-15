@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/Eric/AndroidStudioProjects/BLELOCKer/app/src/main/res/drawable/ic__factory.xml" value="0.3697916666666667" />
         <entry key="..\:/Users/Eric/AndroidStudioProjects/BLELOCKer/app/src/main/res/drawable/ic_launcher_background.xml" value="0.3697916666666667" />
         <entry key="..\:/Users/Eric/AndroidStudioProjects/BLELOCKer/app/src/main/res/drawable/vector_lock_state_bolt_required.xml" value="0.284375" />
         <entry key="..\:/Users/Eric/AndroidStudioProjects/BLELOCKer/app/src/main/res/drawable/vector_lock_state_loading.xml" value="0.284375" />
@@ -14,6 +15,7 @@
         <entry key="..\:/Users/Eric/AndroidStudioProjects/BLELOCKer/app/src/main/res/layout/fragment_scan.xml" value="0.2682291666666667" />
         <entry key="..\:/Users/Eric/AndroidStudioProjects/BLELOCKer/app/src/main/res/layout/toolbar.xml" value="0.3536458333333333" />
         <entry key="..\:/Users/Eric/AndroidStudioProjects/BLELOCKer/app/src/main/res/menu/home_add_button.xml" value="0.3536458333333333" />
+        <entry key="..\:/Users/Eric/AndroidStudioProjects/BLELOCKer/app/src/main/res/menu/my_menu.xml" value="0.3536458333333333" />
       </map>
     </option>
   </component>

@@ -8,6 +8,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.Navigation
+import androidx.navigation.fragment.findNavController
 import com.example.blelocker.*
 import com.example.blelocker.entity.LockConnectionInformation
 import com.google.zxing.integration.android.IntentIntegrator
@@ -38,7 +39,7 @@ class ScanFragment: BaseFragment() {
                     }
 
                 }
-            }
+            }else findNavController().popBackStack()
         }
         startScanner()
     }
@@ -52,7 +53,13 @@ class ScanFragment: BaseFragment() {
             val data = String(result).replace(Regex("\\P{Print}"), "")
 //            Timber.d("decrypted qr code: $data")
 //            showLog("\ndecrypted qr code: $data")
-            oneLockViewModel.mLockConnectionInfo.value = LockConnectionInfo(data)
+            requireActivity().runOnUiThread {
+                oneLockViewModel.mLockConnectionInfo.value = LockConnectionInfo(data)
+                val mSharedPreferences = requireActivity().getSharedPreferences(MainActivity.DATA, 0)
+                mSharedPreferences.edit()
+                    .putString(MainActivity.MY_LOCK_QRCODE, mQRcode)
+                    .apply()
+            }
             function.invoke()
             Log.d("TAG",oneLockViewModel.mLockConnectionInfo.value.toString())
         } ?: throw IllegalArgumentException("Decrypted string is null")
@@ -98,43 +105,41 @@ class ScanFragment: BaseFragment() {
         }
     }
     fun LockConnectionInfo(jsonString: String): LockConnectionInformation {
-//        if (parser.parse(jsonString).isJsonObject) {
-        val root = parser.parse(jsonString)
-        val oneTimeToken = root.asJsonObject?.get("T")?.asString
-            ?: throw IllegalArgumentException("Invalid Token")
-        val keyOne = root.asJsonObject?.get("K")?.asString
-            ?: throw IllegalArgumentException("Invalid AES_Key")
-        val macAddress =
-            root.asJsonObject?.get("A")?.asString?.chunked(2)?.joinToString(":") { it }
-                ?: throw IllegalArgumentException("Invalid MAC_Address")
-        val isOwnerToken = root.asJsonObject?.has("F") == false
-        val isFrom =
-            if (!isOwnerToken) root.asJsonObject?.get("F")?.asString ?: "" else ""
-        val lockName = root.asJsonObject?.get("L")?.asString ?: "New_Lock"
-        return LockConnectionInformation(
-            macAddress = macAddress,
-            displayName = lockName,
-            keyOne = Base64.encodeToString(
-                hexToBytes(keyOne),
-                Base64.DEFAULT
-            ),
-            keyTwo = "",
-            oneTimeToken = Base64.encodeToString(
-                hexToBytes(oneTimeToken),
-                Base64.DEFAULT
-            ),
-            permanentToken = "",
-            isOwnerToken = isOwnerToken,
-            tokenName = "T",
-            sharedFrom = isFrom,
-            index = 0
-        )
-
-
-//        } else {
-////            Toast.makeText(requireContext(), "getString(R.string.global_please_try_again)", Toast.LENGTH_SHORT).show()
-//            throw IllegalArgumentException("Invalid QR Code")
-//        }
+        if (parser.parse(jsonString).isJsonObject) {
+            val root = parser.parse(jsonString)
+            val oneTimeToken = root.asJsonObject?.get("T")?.asString
+                ?: throw IllegalArgumentException("Invalid Token")
+            val keyOne = root.asJsonObject?.get("K")?.asString
+                ?: throw IllegalArgumentException("Invalid AES_Key")
+            val macAddress =
+                root.asJsonObject?.get("A")?.asString?.chunked(2)?.joinToString(":") { it }
+                    ?: throw IllegalArgumentException("Invalid MAC_Address")
+            val isOwnerToken = root.asJsonObject?.has("F") == false
+            val isFrom =
+                if (!isOwnerToken) root.asJsonObject?.get("F")?.asString ?: "" else ""
+            val lockName = root.asJsonObject?.get("L")?.asString ?: "New_Lock"
+            return LockConnectionInformation(
+                macAddress = macAddress,
+                displayName = lockName,
+                keyOne = Base64.encodeToString(
+                    hexToBytes(keyOne),
+                    Base64.DEFAULT
+                ),
+                keyTwo = "",
+                oneTimeToken = Base64.encodeToString(
+                    hexToBytes(oneTimeToken),
+                    Base64.DEFAULT
+                ),
+                permanentToken = "",
+                isOwnerToken = isOwnerToken,
+                tokenName = "T",
+                sharedFrom = isFrom,
+                index = 0
+            )
+        } else {
+//            Toast.makeText(requireContext(), "getString(R.string.global_please_try_again)", Toast.LENGTH_SHORT).show()
+            throw IllegalArgumentException("Invalid QR Code")
+        }
     }
     // Start the QR Scanner
     private fun startScanner() {

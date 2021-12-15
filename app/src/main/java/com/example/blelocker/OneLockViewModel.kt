@@ -105,7 +105,19 @@ class OneLockViewModel: ViewModel() {
             }
         } ?: throw IllegalArgumentException("Error when decryption")
     }
-
+    fun resolveCE(aesKeyTwo: ByteArray, notification: ByteArray): Boolean {
+        return decrypt(aesKeyTwo, notification)?.let { decrypted ->
+            if (decrypted.component3().unSignedInt() == 0xCE) {
+                when {
+                    decrypted.component5().unSignedInt() == 0x01 -> true
+                    decrypted.component5().unSignedInt() == 0x00 -> false
+                    else -> throw IllegalArgumentException("Unknown data")
+                }
+            } else {
+                throw IllegalArgumentException("Return function byte is not [C8]")
+            }
+        } ?: throw IllegalArgumentException("Error when decryption")
+    }
 
     fun resolveD6(aesKeyTwo: ByteArray, notification: ByteArray): LockSetting {
         return aesKeyTwo.let { keyTwo ->
@@ -287,7 +299,7 @@ class OneLockViewModel: ViewModel() {
             0xC7 -> c7(serialIncrementAndGet(), key, data)
 //            0xC8 -> c8(serialIncrementAndGet(), key, data)
 //            0xCC -> cc(serialIncrementAndGet(), key)
-//            0xCE -> ce(serialIncrementAndGet(), key, data)
+            0xCE -> ce(serialIncrementAndGet(), key, data)
 //            0xD0 -> d0(serialIncrementAndGet(), key)
 //            0xD1 -> d1(serialIncrementAndGet(), key, data)
 //            0xD2 -> d2(serialIncrementAndGet(), key)
@@ -358,6 +370,25 @@ class OneLockViewModel: ViewModel() {
         return encrypt(aesKeyTwo, pad(serial + sendByte + code))
             ?: throw IllegalArgumentException("bytes cannot be null")
     }
+
+    /**
+     * ByteArray [CE] data command. Add admin code
+     *
+     * @return An encoded byte array of [CE] command.
+     * */
+    fun ce(
+        serial: ByteArray,
+        aesKeyTwo: ByteArray,
+        code: ByteArray
+    ): ByteArray {
+        val sendByte = ByteArray(2)
+        sendByte[0] = 0xCE.toByte() // function
+        sendByte[1] = (code.size).toByte() // len
+//        Timber.d("ce: ${(serial + sendByte + code).toHex()}")
+        return encrypt(aesKeyTwo, pad(serial + sendByte + code))
+            ?: throw IllegalArgumentException("bytes cannot be null")
+    }
+
     fun d6(
         serial: ByteArray,
         aesKeyTwo: ByteArray
