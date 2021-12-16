@@ -74,7 +74,6 @@ class OneLockFragment: BaseFragment() {
         setHasOptionsMenu(true)
         my_toolbar.inflateMenu(R.menu.my_menu)
         my_toolbar.title = "BLE LOCKer"
-        my_toolbar.setTitleTextColor(Color.WHITE)
 //        my_toolbar.menu.clear()
 //
         log_tv.movementMethod = ScrollingMovementMethod.getInstance()
@@ -164,12 +163,13 @@ class OneLockFragment: BaseFragment() {
         mBluetoothManager = requireContext().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
         mBluetoothLeScanner = (mBluetoothManager?:return).adapter.bluetoothLeScanner
 
+
+        //using requireActivity() might meet Fragment not attached to Activity error and crash.
         requireActivity().runOnUiThread {
             oneLockViewModel.mLockBleStatus.value = true
             mHandler = Handler()
             mHandler?.postDelayed({
                 mBluetoothLeScanner?.stopScan(mScanCallback)
-                invalidateOptionsMenu(requireActivity())
 //            沒有在連gatt，藍芽scan已逾時
                 if (mBluetoothGatt == null) {
                     oneLockViewModel.mLockBleStatus.value = false
@@ -386,7 +386,7 @@ class OneLockFragment: BaseFragment() {
             )
             when(decrypted?.component3()?.unSignedInt()){
                 0xC0 -> {
-                    Log.d("TAG","C0 notyfy ramNum2")
+                    Log.d("TAG","C0 notify ramNum2")
                     generateKeyTwo(randomNumberOne?:return,oneLockViewModel.resolveC0(keyOne,characteristic.value)){
                         keyTwo = it
 //                        showLog("C0 notyfy ramNum2\nApp use it to generateKeyTwo = $keyTwo")
@@ -410,7 +410,7 @@ class OneLockFragment: BaseFragment() {
 //                    val deviceToken = determineTokenState(tokenStateFromDevice, isLockFromSharing?:return)
                         val deviceToken = oneLockViewModel.determineTokenState(dataFromDevice, false)
                         val permission = oneLockViewModel.determineTokenPermission(dataFromDevice)
-                        Log.d("TAG", "C1 notyfy token state : ${dataFromDevice.toHex()}")
+                        Log.d("TAG", "C1 notify token state : ${dataFromDevice.toHex()}")
                         Log.d("TAG", "token permission: $permission")
                     }
                 }
@@ -454,10 +454,10 @@ class OneLockFragment: BaseFragment() {
                             closeBLEGatt()
                             //set ble scan btn not clickable
                             iv_my_lock_ble_status.isClickable = false
-                            showLog("CE notyfy 重置成功")
+                            showLog("CE notify 重置成功")
                         }
                     }else {
-                        requireActivity().runOnUiThread {showLog("CE notyfy 重置失敗")}
+                        requireActivity().runOnUiThread {showLog("CE notify 重置失敗")}
                     }
                 }
 
@@ -465,7 +465,7 @@ class OneLockFragment: BaseFragment() {
                     mLockSetting = oneLockViewModel.resolveD6(keyTwo?:return, characteristic.value)
                     val islocked = if(mLockSetting?.status==0)"locked" else "unlock"
                     requireActivity().runOnUiThread {
-                        showLog("D6 notyfy Lock's setting: ${mLockSetting}")
+                        showLog("D6 notify Lock's setting: ${mLockSetting}")
                         btn_lock.clearAnimation()
                         when (mLockSetting?.status) {
                             LOCKED -> {
@@ -509,7 +509,7 @@ class OneLockFragment: BaseFragment() {
         ) {
             requireActivity().runOnUiThread {
                 showLog(
-                    "\nonDescriptorWrite \n" +
+                    "\nsetupNotification \n" +
                             "--->in Characteristic\n" +
                             "--->[${descriptor?.uuid}]\n" +
                             "--->:${descriptor?.value}"
@@ -534,7 +534,8 @@ class OneLockFragment: BaseFragment() {
 //        val permanentToken = Base64.decode(mLockConnectionInfo?.permanentToken, Base64.DEFAULT)
         (notify_characteristic?:return).value = oneLockViewModel.createCommand(0xC0, keyOne)
 //        showLog("\napp writeC0: ${notify_characteristic.value}")
-        Log.d("TAG","\napp writeC0: ${notify_characteristic.value}")
+        requireActivity().runOnUiThread {
+            showLog("\napp writeC0: ${notify_characteristic.value}")}
         randomNumberOne = oneLockViewModel.resolveC0(keyOne,notify_characteristic.value)
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
@@ -545,7 +546,8 @@ class OneLockFragment: BaseFragment() {
         val permanentToken = Base64.decode(mPermanentToken, Base64.DEFAULT)
         isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
         notify_characteristic?.value = oneLockViewModel.createCommand(0xC1, keyTwo,permanentToken)
-        Log.d("TAG","\napp writeC1: ${notify_characteristic?.value}")
+        requireActivity().runOnUiThread {
+            showLog("\napp writeC1: ${notify_characteristic?.value}")}
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
     private fun sendC1withOTToken(keyTwo: ByteArray) {
@@ -556,7 +558,8 @@ class OneLockFragment: BaseFragment() {
         isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
         notify_characteristic?.value = oneLockViewModel.createCommand(0xC1, keyTwo, permanentToken)
 //        showLog("\napp writeC1: ${notify_characteristic?.value}")
-        Log.d("TAG","\napp writeC1_OT: ${notify_characteristic?.value}")
+        requireActivity().runOnUiThread {
+            showLog("\napp writeC1_OT: ${notify_characteristic?.value}")}
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
     private fun sendC7() {
@@ -565,7 +568,8 @@ class OneLockFragment: BaseFragment() {
         isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
         notify_characteristic?.value = oneLockViewModel.createCommand(0xC7, keyTwo?:return, oneLockViewModel.stringCodeToHex("0000"))
 //        showLog("\napp writeC1: ${notify_characteristic?.value}")
-        Log.d("TAG","\napp writeC7: ${notify_characteristic?.value}")
+        requireActivity().runOnUiThread {
+            showLog("\napp writeC7: ${notify_characteristic?.value}")}
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
     private fun sendCE(){
@@ -576,7 +580,8 @@ class OneLockFragment: BaseFragment() {
         isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
         notify_characteristic?.value = oneLockViewModel.createCommand(0xCE, keyTwo?:return, sendBytes)
 //        showLog("\napp writeC1: ${notify_characteristic?.value}")
-        Log.d("TAG","\napp writeCE: ${notify_characteristic?.value}")
+        requireActivity().runOnUiThread {
+            showLog("\napp writeCE: ${notify_characteristic?.value}")}
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
 
@@ -594,7 +599,8 @@ class OneLockFragment: BaseFragment() {
             0xD7,
             keyTwo?:return,
             if(toLock)byteArrayOf(0x00)else byteArrayOf(0x01))
-//        showLog("\napp writeD7: ${notify_characteristic?.value}")
+        requireActivity().runOnUiThread {
+            showLog("\napp writeD7: ${notify_characteristic?.value}")}
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
 
