@@ -22,4 +22,14 @@
         <item name="colorOnSurface">@color/md_theme_light_onSurface</item>
 
     </style>
+    <style name="styleText" parent="android:TextAppearance">
+        <item name="android:textColor">@color/md_theme_light_onPrimary</item>
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="styleText.log">
+        <item name="android:textColor">@color/md_theme_light_onSurface</item>
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:textStyle">normal</item>
+    </style>
 </resources>

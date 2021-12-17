@@ -4,6 +4,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/play"
+        android:icon="@drawable/ic_play_circle"
+        android:title="play"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/pause"
+        android:icon="@drawable/ic_pause_circle_outline"
+        android:title="pause"
+        android:visible="false"
+        app:showAsAction="ifRoom"/>
+    <item
         android:id="@+id/delete"
         android:icon="@drawable/ic_baseline_delete_24"
         android:title="delete"

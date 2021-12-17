@@ -10,21 +10,19 @@ import android.content.Context.BLUETOOTH_SERVICE
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.os.Build
 import android.os.Handler
+import android.text.Editable
+import android.text.TextWatcher
 import android.text.method.ScrollingMovementMethod
 import android.util.Base64
 import android.util.Log
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import androidx.core.app.ActivityCompat
-import androidx.core.app.ActivityCompat.invalidateOptionsMenu
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
 import com.example.blelocker.*
 import com.example.blelocker.MainActivity.Companion.DATA
@@ -35,6 +33,7 @@ import com.example.blelocker.entity.LockSetting
 import com.example.blelocker.entity.LockStatus.LOCKED
 import com.example.blelocker.entity.LockStatus.UNLOCKED
 import kotlinx.android.synthetic.main.fragment_onelock.*
+import kotlinx.coroutines.*
 import java.io.IOException
 import java.util.*
 
@@ -60,6 +59,8 @@ class OneLockFragment: BaseFragment() {
 
     var mLockSetting: LockSetting?=null
     var mGattStatus: Boolean?=null
+    var uiScope: Job?=null
+    var testScope: Job?=null
 
     private val rotateAnimation = RotateAnimation(
         0f, 359f,
@@ -77,6 +78,17 @@ class OneLockFragment: BaseFragment() {
 //        my_toolbar.menu.clear()
 //
         log_tv.movementMethod = ScrollingMovementMethod.getInstance()
+        log_tv.addTextChangedListener(object : TextWatcher{
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                while (log_tv.canScrollVertically(1)) {
+                    log_tv.scrollBy(0, 10)
+                }
+            }
+        })
 
 
         oneLockViewModel.mLockBleStatus.observe(this){
@@ -118,6 +130,35 @@ class OneLockFragment: BaseFragment() {
                     cleanLog()
                     true
                 }
+                R.id.play -> {
+                    my_toolbar.menu.findItem(R.id.play).isVisible = false
+                    my_toolbar.menu.findItem(R.id.pause).isVisible = true
+                    testScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                        try{
+                            var timestamp_ = 0
+                            while(timestamp_<60) {
+                                delay(1000)
+                                timestamp_ += 1
+                                requireActivity().runOnUiThread{
+                                    showLog("Thread Test ${timestamp_}")
+                                }
+                            }
+                        }finally {
+                            requireActivity().runOnUiThread{
+                                showLog("Stop Thread Test.")
+                                my_toolbar.menu.findItem(R.id.pause).isVisible = false
+                                my_toolbar.menu.findItem(R.id.play).isVisible = true
+                            }
+                        }
+                    }
+                    true
+                }
+                R.id.pause -> {
+                    my_toolbar.menu.findItem(R.id.pause).isVisible = false
+                    my_toolbar.menu.findItem(R.id.play).isVisible = true
+                    testScope?.cancel()
+                    true
+                }
                 else -> false
             }
         }
@@ -128,7 +169,6 @@ class OneLockFragment: BaseFragment() {
             //factory reset
             sendCE()
         }
-
 
 
 
@@ -163,20 +203,41 @@ class OneLockFragment: BaseFragment() {
         mBluetoothManager = requireContext().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
         mBluetoothLeScanner = (mBluetoothManager?:return).adapter.bluetoothLeScanner
 
+//        test block before scan
+//        runBlocking(Dispatchers.Default){
+//            var timestamp_ = 0
+//            while(timestamp_<30) {
+//                delay(1000)
+//                timestamp_ += 1
+//                requireActivity().runOnUiThread{ showLog("Block for ${timestamp_} seconds.")}//Can't work until the end of time
+//                Log.d("TAG","Block for ${timestamp_} seconds.")
+//            }
+//        }
 
-        //using requireActivity() might meet Fragment not attached to Activity error and crash.
-        requireActivity().runOnUiThread {
-            oneLockViewModel.mLockBleStatus.value = true
-            mHandler = Handler()
-            mHandler?.postDelayed({
-                mBluetoothLeScanner?.stopScan(mScanCallback)
-//            沒有在連gatt，藍芽scan已逾時
-                if (mBluetoothGatt == null) {
-                    oneLockViewModel.mLockBleStatus.value = false
-                }
-            }, 10000)
-        }
         mBluetoothLeScanner?.startScan(mScanCallback) // 開始搜尋
+        requireActivity().runOnUiThread{ oneLockViewModel.mLockBleStatus.value = true }//Start icon animation
+        //using requireActivity() might meet Fragment not attached to Activity error and crash.
+        uiScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+            try{
+                var timestamp_ = 0
+                while(timestamp_<30) {
+                    delay(1000)
+                    timestamp_ += 1
+                    requireActivity().runOnUiThread{
+                        showLog("Had scanned for ${timestamp_} seconds.")
+                    }
+                }
+            }finally {
+                requireActivity().runOnUiThread{
+                    showLog("Stop ble scan and counting.")
+                    mBluetoothLeScanner?.stopScan(mScanCallback)
+                    //沒有在連gatt，藍芽scan已逾時(30sec)
+                    if (mBluetoothGatt == null) {
+                        oneLockViewModel.mLockBleStatus.value = false
+                    }
+                }
+            }
+        }
 
     }
     private val mScanCallback = object: ScanCallback() {
@@ -202,6 +263,7 @@ class OneLockFragment: BaseFragment() {
     private fun pauseScan() {
         if (mBluetoothLeScanner != null) {
             mBluetoothLeScanner?.stopScan(mScanCallback)
+            uiScope?.cancel()
         }
     }
 
@@ -465,7 +527,7 @@ class OneLockFragment: BaseFragment() {
                     mLockSetting = oneLockViewModel.resolveD6(keyTwo?:return, characteristic.value)
                     val islocked = if(mLockSetting?.status==0)"locked" else "unlock"
                     requireActivity().runOnUiThread {
-                        showLog("D6 notify Lock's setting: ${mLockSetting}")
+                        showLog("\nD6 notify Lock's setting: ${mLockSetting}")
                         btn_lock.clearAnimation()
                         when (mLockSetting?.status) {
                             LOCKED -> {

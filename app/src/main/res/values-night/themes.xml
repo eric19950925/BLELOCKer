@@ -23,4 +23,14 @@
         <item name="colorOnSurface">@color/md_theme_dark_onSurface</item>
 
     </style>
+    <style name="styleText" parent="android:TextAppearance">
+        <item name="android:textColor">@color/md_theme_dark_primary</item>
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:textStyle">italic</item>
+    </style>
+    <style name="styleText.log">
+        <item name="android:textColor">@color/md_theme_dark_onSurface</item>
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:textStyle">italic</item>
+    </style>
 </resources>
