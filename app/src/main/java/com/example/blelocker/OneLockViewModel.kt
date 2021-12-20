@@ -2,10 +2,11 @@ package com.example.blelocker
 
 import android.util.Base64
 import android.util.Log
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.*
+import com.example.blelocker.Model.LockConnInfoRepository
 import com.example.blelocker.entity.*
 import com.google.gson.JsonParser
+import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicInteger
@@ -13,11 +14,15 @@ import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 
-class OneLockViewModel: ViewModel() {
+class OneLockViewModel(private val repository: LockConnInfoRepository): ViewModel() {
     val mLockConnectionInfo = MutableLiveData<LockConnectionInformation>()
     val mLockBleStatus = MutableLiveData<Boolean>()
     val isRefreshing = MutableLiveData<Boolean>()
+    val allLocks : LiveData<List<LockConnectionInformation>> = repository.allLockInfo.asLiveData()
 
+    fun insertLock(lockConnectionInformation: LockConnectionInformation) = viewModelScope.launch {
+        repository.LockInsert(lockConnectionInformation)
+    }
 
     fun extractToken(byteArray: ByteArray): DeviceToken {
         return if (byteArray.component1().unSignedInt() == 0) {

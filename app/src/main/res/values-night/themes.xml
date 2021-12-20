@@ -33,4 +33,7 @@
         <item name="fontFamily">sans-serif-medium</item>
         <item name="android:textStyle">italic</item>
     </style>
+    <style name="styleView" parent="CardView">
+        <item name="cardBackgroundColor">@color/md_theme_dark_primary</item>
+    </style>
 </resources>

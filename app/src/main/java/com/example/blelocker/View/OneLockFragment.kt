@@ -299,15 +299,31 @@ class OneLockFragment: BaseFragment() {
         super.onDetach()
     }
 
+    override fun onBackPressed() {
+        Log.d("TAG","onBackPressed")
+        requireActivity().finish()
+    }
+
     override fun onResume() {
         readSharedPreference()
         //todo : auto ble conn
+//        val autoblescope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+//            delay(10000)
+//            autoBleConn()
+//        }
         Log.d("TAG","onResume")
         super.onResume()
     }
 
-    //todo:press back should leave this app
-
+    private fun autoBleConn() {
+        if(checkPermissions()){
+            if(checkBTenable()){
+                if(oneLockViewModel.mLockConnectionInfo.value != null){
+                    bleScan()
+                }
+            }
+        }
+    }
 
     private fun closeBLEGatt() {
         if (mBluetoothGatt != null) {
@@ -322,11 +338,11 @@ class OneLockFragment: BaseFragment() {
 
     private fun checkBTenable(): Boolean {
         mBluetoothManager = requireContext().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
-        mBluetoothManager!!.adapter?.takeIf { !it.isEnabled }?.apply {
+        mBluetoothManager?.adapter?.takeIf { !it.isEnabled }?.apply {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(enableBtIntent, 124)
         }
-        return mBluetoothManager!!.adapter?.isEnabled?:false
+        return mBluetoothManager?.adapter?.isEnabled?:false
     }
 
     private fun checkPermissions() : Boolean{

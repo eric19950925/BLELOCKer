@@ -43,6 +43,11 @@ class ScanFragment: BaseFragment() {
         }
         startScanner()
     }
+
+    override fun onBackPressed() {
+        Log.d("TAG","onBackPressed")
+    }
+
     private fun decryptQRcode(scanString: String, function: () -> Unit) {
         val base64Decoded = Base64.decode(scanString, Base64.DEFAULT)
         val decrypted = decrypt(

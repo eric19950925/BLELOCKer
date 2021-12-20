@@ -32,4 +32,7 @@
         <item name="fontFamily">sans-serif-medium</item>
         <item name="android:textStyle">normal</item>
     </style>
+    <style name="styleView" parent="CardView">
+        <item name="cardBackgroundColor">@color/md_theme_light_onPrimary</item>
+    </style>
 </resources>
