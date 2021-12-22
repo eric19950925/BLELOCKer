@@ -7,6 +7,7 @@
         android:id="@+id/play"
         android:icon="@drawable/ic_play_circle"
         android:title="play"
+        android:visible="false"
         app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/pause"

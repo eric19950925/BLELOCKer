@@ -295,6 +295,7 @@ class OneLockViewModel(private val repository: LockConnInfoRepository): ViewMode
         data: ByteArray = byteArrayOf()
     ): ByteArray {
 //        Timber.d("create command: [${String.format("%2x", function)}]")
+        //目前僅實作部分功能
         return when (function) {
             0xC0 -> {
                 commandSerial.set(0)

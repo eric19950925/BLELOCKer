@@ -6,9 +6,7 @@ import android.util.Base64
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.Navigation
-import androidx.navigation.fragment.findNavController
 import com.example.blelocker.*
 import com.example.blelocker.entity.LockConnectionInformation
 import com.google.zxing.integration.android.IntentIntegrator
@@ -16,16 +14,16 @@ import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 import com.google.gson.JsonParser
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class ScanFragment: BaseFragment() {
     override fun getLayoutRes(): Int = R.layout.fragment_scan
-    val oneLockViewModel by activityViewModels<OneLockViewModel>()
+    val oneLockViewModel by viewModel<OneLockViewModel>()
     private lateinit var mQrResultLauncher : ActivityResultLauncher<Intent>
     var mQRcode: String?=null
     private val parser = JsonParser()
     override fun onViewHasCreated() {
 
-        // Alternative to "onActivityResult", because that is "deprecated"
         mQrResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if(it.resultCode == Activity.RESULT_OK) {
                 val result = IntentIntegrator.parseActivityResult(it.resultCode, it.data)
@@ -34,6 +32,7 @@ class ScanFragment: BaseFragment() {
                     Log.d("TAG",result.contents)
 //                    cleanLog()
                     mQRcode = result.contents
+                    //處理QRcode
                     decryptQRcode(result.contents) {
                         Navigation.findNavController(requireView()).navigate(R.id.action_back_to_onelock)
                     }
@@ -56,9 +55,8 @@ class ScanFragment: BaseFragment() {
         )
         decrypted?.let { result ->
             val data = String(result).replace(Regex("\\P{Print}"), "")
-//            Timber.d("decrypted qr code: $data")
-//            showLog("\ndecrypted qr code: $data")
             requireActivity().runOnUiThread {
+                //store data
                 oneLockViewModel.mLockConnectionInfo.value = LockConnectionInfo(data)
                 val mSharedPreferences = requireActivity().getSharedPreferences(MainActivity.DATA, 0)
                 mSharedPreferences.edit()
@@ -75,29 +73,13 @@ class ScanFragment: BaseFragment() {
             val keySpec = SecretKeySpec(key, "AES")
             cipher.init(Cipher.DECRYPT_MODE, keySpec)
             val original: ByteArray = cipher.doFinal(data)
-//            showLog("\ndecrypted: \n${original.toHex()}")
             original
         } catch (exception: Exception) {
-//            showLog(exception.toString())
+
             null
         }
     }
-    //加密,the size of key should be 16 bytes
-    fun encrypt(key: ByteArray, data: ByteArray): ByteArray? {
-        return try {
-            val cipher: Cipher = Cipher.getInstance(MainActivity.CIPHER_MODE)
-            val keySpec = SecretKeySpec(key, "AES")
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec)
-            val encrypted: ByteArray = cipher.doFinal(data)
-            Log.d("TAG","encrypted:\n${encrypted.toHex()}")
-            encrypted
-        } catch (exception: Exception) {
-//            Timber.d(exception)
-            Log.d("TAG",exception.toString())
-//            java.security.InvalidKeyException: Unsupported key size: 13 bytes
-            null
-        }
-    }
+
     fun pad(data: ByteArray, padZero: Boolean = false): ByteArray {
         if (data.isEmpty()) throw IllegalArgumentException("Invalid command.")
         val padNumber = 16 - (data.size) % 16
@@ -109,6 +91,8 @@ class ScanFragment: BaseFragment() {
             data + padBytes
         }
     }
+
+    //QRcode data
     fun LockConnectionInfo(jsonString: String): LockConnectionInformation {
         if (parser.parse(jsonString).isJsonObject) {
             val root = parser.parse(jsonString)
@@ -142,7 +126,6 @@ class ScanFragment: BaseFragment() {
                 index = 0
             )
         } else {
-//            Toast.makeText(requireContext(), "getString(R.string.global_please_try_again)", Toast.LENGTH_SHORT).show()
             throw IllegalArgumentException("Invalid QR Code")
         }
     }
