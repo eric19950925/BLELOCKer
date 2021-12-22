@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface LockConnInfoDAO {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(information: LockConnectionInformation)
+    fun insert(information: LockConnectionInformation)//maybe something wrong
 
     @Query("SELECT * FROM lock_connection_information ORDER BY display_name ASC")
     fun getAlphabetizedLocks(): Flow<List<LockConnectionInformation>>

@@ -63,10 +63,6 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.9'
 
 
-    implementation 'androidx.room:room-runtime:2.3.0'
-    annotationProcessor 'androidx.room:room-compiler:2.3.0'
-    kapt 'androidx.room:room-compiler:2.3.0'
-    androidTestImplementation 'androidx.test:rules:1.4.0-alpha05'
 
     // mvvm
     implementation "androidx.fragment:fragment:1.4.0"
@@ -84,7 +80,13 @@ dependencies {
     def roomVersion = "2.3.0"
 
     implementation "androidx.room:room-ktx:$roomVersion"
+    implementation "androidx.room:room-runtime:$roomVersion"
     kapt "androidx.room:room-compiler:$roomVersion"
+    androidTestImplementation 'androidx.test:rules:1.4.0-alpha05'
     androidTestImplementation "androidx.room:room-testing:$roomVersion"
+
+    // Koin for Android
+    implementation 'org.koin:koin-androidx-viewmodel:2.0.1'
+    implementation 'org.koin:koin-androidx-scope:2.0.1'
 
 }

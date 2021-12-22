@@ -2,10 +2,12 @@ package com.example.blelocker.View
 
 import android.Manifest
 import android.animation.ValueAnimator
+import android.app.Application
 import android.bluetooth.*
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.content.Context
 import android.content.Context.BLUETOOTH_SERVICE
 import android.content.Intent
 import android.content.SharedPreferences
@@ -27,6 +29,7 @@ import androidx.navigation.Navigation
 import com.example.blelocker.*
 import com.example.blelocker.MainActivity.Companion.DATA
 import com.example.blelocker.MainActivity.Companion.MY_LOCK_QRCODE
+import com.example.blelocker.Model.LockConnInfoRepository
 import com.example.blelocker.entity.DeviceToken
 import com.example.blelocker.entity.LockConnectionInformation
 import com.example.blelocker.entity.LockSetting
@@ -34,11 +37,12 @@ import com.example.blelocker.entity.LockStatus.LOCKED
 import com.example.blelocker.entity.LockStatus.UNLOCKED
 import kotlinx.android.synthetic.main.fragment_onelock.*
 import kotlinx.coroutines.*
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.IOException
 import java.util.*
 
 class OneLockFragment: BaseFragment() {
-    val oneLockViewModel by activityViewModels<OneLockViewModel>()
+    val oneLockViewModel by viewModel<OneLockViewModel>()
     private lateinit var mSharedPreferences: SharedPreferences
 
     private var mHandler: Handler? = null
@@ -120,6 +124,11 @@ class OneLockFragment: BaseFragment() {
             sendD7(mLockSetting?.status == LOCKED)
             btn_lock_wait()
         }
+
+        fab.setOnClickListener {
+            Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_all)
+        }
+
         my_toolbar.setOnMenuItemClickListener {
             when(it.itemId){
                 R.id.scan -> {
