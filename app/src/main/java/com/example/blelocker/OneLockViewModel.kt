@@ -21,7 +21,41 @@ class OneLockViewModel(private val repository: LockConnInfoRepository): ViewMode
     val allLocks : LiveData<List<LockConnectionInformation>> = repository.allLockInfo.asLiveData()
 
     fun insertLock(lockConnectionInformation: LockConnectionInformation) = viewModelScope.launch {
+        if(repository.getLockConnectInformation(lockConnectionInformation.macAddress).macAddress.isNotBlank())return@launch
         repository.LockInsert(lockConnectionInformation)
+    }
+
+    fun deleteLocks() = viewModelScope.launch {
+        repository.deleteAllLocks()
+    }
+
+    fun getLockInfo(macAddress: String) = viewModelScope.launch {
+        mLockConnectionInfo.value = repository.getLockConnectInformation(macAddress)//pass by allLocks page
+    }
+
+    fun updateLockConnectInformation(lockConnectionInformation: LockConnectionInformation) = viewModelScope.launch {
+        repository.LockInsert(lockConnectionInformation)
+    }
+
+    fun updateLockPermanentToken(token: String) = viewModelScope.launch {
+        //update lockInfo with PermanentToken
+        val newLockInfo = (mLockConnectionInfo.value?:return@launch).let {
+            LockConnectionInformation(
+                macAddress = it.macAddress,
+                displayName = it.displayName,
+                keyOne = it.keyOne,
+                keyTwo = it.keyTwo,
+                oneTimeToken = it.oneTimeToken,
+                permanentToken = token,
+                isOwnerToken = it.isOwnerToken,
+                tokenName = "T",
+                sharedFrom = it.sharedFrom,
+                index = 0,
+                adminCode = it.adminCode//此時還沒有設定
+            )
+        }
+        repository.LockInsert(newLockInfo)
+        mLockConnectionInfo.value = newLockInfo
     }
 
     fun extractToken(byteArray: ByteArray): DeviceToken {
@@ -35,7 +69,10 @@ class OneLockViewModel(private val repository: LockConnInfoRepository): ViewMode
             val permission = String(byteArray.copyOfRange(3, 4))
             val token = byteArray.copyOfRange(4, 12)
             if (isPermanentToken) {
+                updateLockPermanentToken(Base64.encodeToString(token, Base64.DEFAULT))
+
                 val name = String(byteArray.copyOfRange(12, byteArray.size))
+                //return below
                 DeviceToken.PermanentToken(
                     Base64.encodeToString(token, Base64.DEFAULT),
                     isOwnerToken,

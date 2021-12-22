@@ -15,6 +15,7 @@ import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 import com.google.gson.JsonParser
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import android.os.Bundle
 
 class ScanFragment: BaseFragment() {
     override fun getLayoutRes(): Int = R.layout.fragment_scan
@@ -34,11 +35,13 @@ class ScanFragment: BaseFragment() {
                     mQRcode = result.contents
                     //處理QRcode
                     decryptQRcode(result.contents) {
-                        Navigation.findNavController(requireView()).navigate(R.id.action_back_to_onelock)
+                        val bundle = Bundle()
+                        bundle.putString("MAC_ADDRESS", it)
+                        Navigation.findNavController(requireView()).navigate(R.id.action_back_to_alllocks,bundle)
                     }
 
                 }
-            }else Navigation.findNavController(requireView()).navigate(R.id.action_back_to_onelock)
+            }else Navigation.findNavController(requireView()).navigate(R.id.action_back_to_alllocks)
         }
         startScanner()
     }
@@ -47,7 +50,7 @@ class ScanFragment: BaseFragment() {
         Log.d("TAG","onBackPressed")
     }
 
-    private fun decryptQRcode(scanString: String, function: () -> Unit) {
+    private fun decryptQRcode(scanString: String, function: (mac:String) -> Unit) {
         val base64Decoded = Base64.decode(scanString, Base64.DEFAULT)
         val decrypted = decrypt(
             MainActivity.BARCODE_KEY.toByteArray(),
@@ -58,12 +61,11 @@ class ScanFragment: BaseFragment() {
             requireActivity().runOnUiThread {
                 //store data
                 oneLockViewModel.mLockConnectionInfo.value = LockConnectionInfo(data)
-                val mSharedPreferences = requireActivity().getSharedPreferences(MainActivity.DATA, 0)
-                mSharedPreferences.edit()
-                    .putString(MainActivity.MY_LOCK_QRCODE, mQRcode)
-                    .apply()
+
             }
-            function.invoke()
+
+            oneLockViewModel.insertLock(LockConnectionInfo(data))
+            function.invoke(LockConnectionInfo(data).macAddress)
             Log.d("TAG",oneLockViewModel.mLockConnectionInfo.value.toString())
         } ?: throw IllegalArgumentException("Decrypted string is null")
     }

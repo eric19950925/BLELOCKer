@@ -11,7 +11,7 @@ import com.example.blelocker.R
 import com.example.blelocker.entity.LockConnectionInformation
 import kotlinx.android.synthetic.main.alllocks_recyclerview_item.view.*
 
-class AllLocksAdapter() : ListAdapter<LockConnectionInformation, AllLocksAdapter.AllLocksHolder>(LockComparator()) {
+class AllLocksAdapter(private val onClickListener: OnClickListener) : ListAdapter<LockConnectionInformation, AllLocksAdapter.AllLocksHolder>(LockComparator()) {
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AllLocksHolder {
@@ -22,6 +22,9 @@ class AllLocksAdapter() : ListAdapter<LockConnectionInformation, AllLocksAdapter
     override fun onBindViewHolder(holder: AllLocksHolder, position: Int) {
         val item = getItem(position)
         holder.bind(item)
+        holder.itemView.setOnClickListener {
+            onClickListener.onClick(item.macAddress)
+        }
     }
 
     class AllLocksHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -39,6 +42,9 @@ class AllLocksAdapter() : ListAdapter<LockConnectionInformation, AllLocksAdapter
         override fun areContentsTheSame(oldItem: LockConnectionInformation, newItem: LockConnectionInformation): Boolean {
             return oldItem.macAddress == newItem.macAddress
         }
+    }
+    class OnClickListener(val clickListener: (macAddress: String) -> Unit) {
+        fun onClick(macAddress: String) = clickListener(macAddress)
     }
 
 }

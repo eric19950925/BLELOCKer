@@ -59,6 +59,7 @@ class OneLockFragment: BaseFragment() {
     var mLockSetting: LockSetting?=null
     var mGattStatus: Boolean?=null
     var uiScope: Job?=null
+    var testScope: Job?=null
 
     private val rotateAnimation = RotateAnimation(
         0f, 359f,
@@ -88,6 +89,11 @@ class OneLockFragment: BaseFragment() {
                 }
             }
         })
+
+        oneLockViewModel.mLockConnectionInfo.observe(this){
+            tv_my_lock_mac.setText(oneLockViewModel.mLockConnectionInfo.value?.macAddress)
+            tv_my_lock_tk.setText(oneLockViewModel.mLockConnectionInfo.value?.permanentToken)
+        }
 
         //observe the blue tooth connect status to update ui
         oneLockViewModel.mLockBleStatus.observe(this){
@@ -125,11 +131,14 @@ class OneLockFragment: BaseFragment() {
         }
 
 
+        fab.setOnClickListener {
+            Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_all)
+        }
         //top menu function
         my_toolbar.setOnMenuItemClickListener {
             when(it.itemId){
                 R.id.scan -> {
-                    Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_scan)
+                    Navigation.findNavController(requireView()).navigate(R.id.action_back_to_alllocks)
                     true
                 }
                 R.id.delete -> {
@@ -137,11 +146,32 @@ class OneLockFragment: BaseFragment() {
                     true
                 }
                 R.id.play -> {
-                    //click to start some test
+                    my_toolbar.menu.findItem(R.id.play).isVisible = false
+                    my_toolbar.menu.findItem(R.id.pause).isVisible = true
+                    testScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                        try{
+                            var timestamp_ = 0
+                            while(timestamp_<60) {
+                                delay(1000)
+                                timestamp_ += 1
+                                requireActivity().runOnUiThread{
+                                    showLog("Thread Test ${timestamp_}")
+                                }
+                            }
+                        }finally {
+                            requireActivity().runOnUiThread{
+                                showLog("Stop Thread Test.")
+                                my_toolbar.menu.findItem(R.id.pause).isVisible = false
+                                my_toolbar.menu.findItem(R.id.play).isVisible = true
+                            }
+                        }
+                    }
                     true
                 }
                 R.id.pause -> {
-                    //click to stop test
+                    my_toolbar.menu.findItem(R.id.pause).isVisible = false
+                    my_toolbar.menu.findItem(R.id.play).isVisible = true
+                    testScope?.cancel()
                     true
                 }
                 else -> false
@@ -168,7 +198,16 @@ class OneLockFragment: BaseFragment() {
         mBluetoothManager = requireContext().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
         mBluetoothLeScanner = (mBluetoothManager?:return).adapter.bluetoothLeScanner
 
-
+//        test block before scan
+//        runBlocking(Dispatchers.Default){
+//            var timestamp_ = 0
+//            while(timestamp_<30) {
+//                delay(1000)
+//                timestamp_ += 1
+//                requireActivity().runOnUiThread{ showLog("Block for ${timestamp_} seconds.")}//Can't work until the end of time
+//                Log.d("TAG","Block for ${timestamp_} seconds.")
+//            }
+//        }
 
         mBluetoothLeScanner?.startScan(mScanCallback) // 開始搜尋
         requireActivity().runOnUiThread{ oneLockViewModel.mLockBleStatus.value = true }//Start icon animation
@@ -255,15 +294,16 @@ class OneLockFragment: BaseFragment() {
 
     override fun onBackPressed() {
         Log.d("TAG","onBackPressed")
-        requireActivity().finish()
+        Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_all)
     }
 
     override fun onResume() {
-        readSharedPreference()
+        super.onResume()
+        //get lock info by macAddress
+        oneLockViewModel.getLockInfo(getArguments()?.getString("MAC_ADDRESS")?:return)
         //todo : auto ble conn
 
         Log.d("TAG","onResume")
-        super.onResume()
     }
 
 
@@ -410,7 +450,7 @@ class OneLockFragment: BaseFragment() {
                     generateKeyTwo(randomNumberOne?:return,oneLockViewModel.resolveC0(keyOne,characteristic.value)){
                         keyTwo = it
 //                        showLog("C0 notyfy ramNum2\nApp use it to generateKeyTwo = $keyTwo")
-                        if((mPermanentToken?:return@generateKeyTwo).isBlank())sendC1withOTToken(it)
+                        if(oneLockViewModel.mLockConnectionInfo.value?.permanentToken?.isBlank() == true)sendC1withOTToken(it)
                         else sendC1(it)
                     }
 
@@ -438,9 +478,9 @@ class OneLockFragment: BaseFragment() {
                     val dataFromDevice = oneLockViewModel.resolveC7(keyTwo?:return, characteristic.value)
                     if(dataFromDevice == true){
 
-                        var newLockInfo: LockConnectionInformation?=null
-                        oneLockViewModel.mLockConnectionInfo.value?.let {
-                            newLockInfo = LockConnectionInformation(
+                        //update lockInfo with admin code
+                        val newLockInfo = (oneLockViewModel.mLockConnectionInfo.value?:return).let {
+                            LockConnectionInformation(
                                 macAddress = it.macAddress,
                                 displayName = it.displayName,
                                 keyOne = it.keyOne,
@@ -454,9 +494,10 @@ class OneLockFragment: BaseFragment() {
                                 adminCode = "0000"
                             )
                         }
-                        requireActivity().runOnUiThread {oneLockViewModel.mLockConnectionInfo.value = newLockInfo}
+                        oneLockViewModel.updateLockConnectInformation(newLockInfo)
 
                         Log.d("TAG","admin pincode had been set.")
+                        requireActivity().runOnUiThread {showLog("\nadmin pincode had been set.")}
                     }
                     else {
                         Log.d("TAG", "admin pincode had not been set.")
@@ -468,8 +509,6 @@ class OneLockFragment: BaseFragment() {
                         requireActivity().runOnUiThread {
                             //clean data
                             oneLockViewModel.mLockConnectionInfo.value = null
-                            claenSP()
-                            readSharedPreference()
                             //close gatt
                             closeBLEGatt()
                             //set ble scan btn not clickable
@@ -503,12 +542,11 @@ class OneLockFragment: BaseFragment() {
                 }
                 0xE5 -> {
                     oneLockViewModel.decrypt(keyTwo?:return, characteristic.value)?.let { bytes ->
-                        val permanentToken = oneLockViewModel.extractToken(oneLockViewModel.resolveE5(bytes))
-                        mPermanentToken = (permanentToken as DeviceToken.PermanentToken).token
+                        //update token in extractToken function
+                        oneLockViewModel.extractToken(oneLockViewModel.resolveE5(bytes))
                         sendC7()//有了token就設admin code
                     }
-                    saveData()
-                    readSharedPreference()
+
                 }
                 0xEF -> {
 //                        decrypt(keyTwo?:return, characteristic.value)?.let { bytes ->
@@ -551,7 +589,6 @@ class OneLockFragment: BaseFragment() {
         val sunion_service = mBluetoothGatt?.getService(MainActivity.SUNION_SERVICE_UUID)
         val notify_characteristic = sunion_service?.getCharacteristic(MainActivity.NOTIFICATION_CHARACTERISTIC)
         val keyOne = Base64.decode(oneLockViewModel.mLockConnectionInfo.value?.keyOne, Base64.DEFAULT)
-//        val permanentToken = Base64.decode(mLockConnectionInfo?.permanentToken, Base64.DEFAULT)
         (notify_characteristic?:return).value = oneLockViewModel.createCommand(0xC0, keyOne)
 //        showLog("\napp writeC0: ${notify_characteristic.value}")
         requireActivity().runOnUiThread {
@@ -563,7 +600,7 @@ class OneLockFragment: BaseFragment() {
     private fun sendC1(keyTwo: ByteArray) {
         val sunion_service = mBluetoothGatt?.getService(MainActivity.SUNION_SERVICE_UUID)
         val notify_characteristic = sunion_service?.getCharacteristic(MainActivity.NOTIFICATION_CHARACTERISTIC)
-        val permanentToken = Base64.decode(mPermanentToken, Base64.DEFAULT)
+        val permanentToken = Base64.decode(oneLockViewModel.mLockConnectionInfo.value?.permanentToken, Base64.DEFAULT)
         isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
         notify_characteristic?.value = oneLockViewModel.createCommand(0xC1, keyTwo,permanentToken)
         requireActivity().runOnUiThread {

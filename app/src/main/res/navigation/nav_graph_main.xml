@@ -3,16 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph_main"
-    app:startDestination="@id/one_lock_Fragment">
+    app:startDestination="@id/all_locks_Fragment">
 
     <fragment
         android:id="@+id/one_lock_Fragment"
         android:name="com.example.blelocker.View.OneLockFragment"
         tools:layout="@layout/fragment_onelock">
-
-        <action
-            android:id="@+id/action_onelock_to_scan"
-            app:destination="@id/scan_Fragment" />
         <action
             android:id="@+id/action_onelock_to_all"
             app:destination="@id/all_locks_Fragment" />
@@ -23,13 +19,16 @@
         android:name="com.example.blelocker.View.AddLock.ScanFragment"
         tools:layout="@layout/fragment_scan">
         <action
-            android:id="@+id/action_back_to_onelock"
-            app:destination="@id/one_lock_Fragment" />
+            android:id="@+id/action_back_to_alllocks"
+            app:destination="@id/all_locks_Fragment" />
     </fragment>
     <fragment
         android:id="@+id/all_locks_Fragment"
         android:name="com.example.blelocker.View.AllLocksFragment"
         tools:layout="@layout/fragment_all_locks">
+        <action
+            android:id="@+id/action_alllocks_to_scan"
+            app:destination="@id/scan_Fragment" />
         <action
             android:id="@+id/action_to_onelock"
             app:destination="@id/one_lock_Fragment" />
