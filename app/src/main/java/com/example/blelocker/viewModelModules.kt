@@ -6,8 +6,14 @@ import com.example.blelocker.Model.LockConnInfoDAO
 import com.example.blelocker.Model.LockConnInfoDatabase
 import com.example.blelocker.Model.LockConnInfoRepository
 import org.koin.android.ext.koin.androidApplication
+import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
+
+val bluetoothModule = module {
+    single { BleCmdUtils() }
+    viewModel { BleControlViewModel(androidContext(),get()) }
+}
 
 val databaseModule = module {
 

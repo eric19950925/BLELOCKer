@@ -3,9 +3,6 @@ package com.example.blelocker.View
 import android.Manifest
 import android.animation.ValueAnimator
 import android.bluetooth.*
-import android.bluetooth.le.BluetoothLeScanner
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
 import android.content.Context.BLUETOOTH_SERVICE
 import android.content.Intent
 import android.content.SharedPreferences
@@ -27,7 +24,6 @@ import com.example.blelocker.*
 import com.example.blelocker.MainActivity.Companion.DATA
 import com.example.blelocker.MainActivity.Companion.MY_LOCK_QRCODE
 import com.example.blelocker.entity.DeviceToken
-import com.example.blelocker.entity.LockConnectionInformation
 import com.example.blelocker.entity.LockSetting
 import com.example.blelocker.entity.LockStatus.LOCKED
 import com.example.blelocker.entity.LockStatus.UNLOCKED
@@ -39,6 +35,7 @@ import java.util.*
 
 class OneLockFragment: BaseFragment() {
     val oneLockViewModel by viewModel<OneLockViewModel>()
+    val bleViewModel by viewModel<BleControlViewModel>()
     private lateinit var mSharedPreferences: SharedPreferences
 
     private var mHandler: Handler? = null
@@ -46,17 +43,16 @@ class OneLockFragment: BaseFragment() {
 
     override fun getLayoutRes(): Int = R.layout.fragment_onelock
 
-    private var mBluetoothGatt: BluetoothGatt? = null
+//    private var mBluetoothGatt: BluetoothGatt? = null
     private var mBluetoothManager: BluetoothManager? = null
-    private var mBluetoothLeScanner: BluetoothLeScanner? = null
-    private var mBluetoothAdapter: BluetoothAdapter? = null
+//    private var mBluetoothLeScanner: BluetoothLeScanner? = null
+//    private var mBluetoothAdapter: BluetoothAdapter? = null
 
     var randomNumberOne : ByteArray? = null
     var keyTwo : ByteArray? = null
     var isLockFromSharing: Boolean?=null
     var mQRcode: String?=null
 
-    var mLockSetting: LockSetting?=null
     var mGattStatus: Boolean?=null
     var uiScope: Job?=null
     var testScope: Job?=null
@@ -106,7 +102,7 @@ class OneLockFragment: BaseFragment() {
             }else{
                 iv_my_lock_ble_status.visibility = View.GONE
                 btn_lock.visibility = View.VISIBLE
-                if(mLockSetting!=null)return@observe
+                if(bleViewModel.mLockSetting.value != null)return@observe
                 btn_lock.setBackgroundResource(R.drawable.ic_loading_main)
                 btn_lock.startAnimation(rotateAnimation)
                 btn_lock_wait()
@@ -114,7 +110,50 @@ class OneLockFragment: BaseFragment() {
 
         }
 
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        //update log textview
+        bleViewModel.mLogText.observe(this){
+            showLog(it)
+        }
+
+        bleViewModel.mDescriptorValue.observe(this){
+            if(it)bleViewModel.sendC0(oneLockViewModel.mLockConnectionInfo.value?.keyOne?:return@observe)
+        }
+
+        bleViewModel.mDeviceToken.observe(this){
+            oneLockViewModel.updateLockPermanentToken((it as DeviceToken.PermanentToken).token)
+        }
+
+        bleViewModel.mLockSetting.observe(this){
+            //update ui
+            btn_lock.clearAnimation()
+            when (it.status) {
+                LOCKED -> {
+                    btn_lock.setBackgroundResource(R.drawable.ic_lock_main)
+                    iv_factory.visibility = View.VISIBLE
+                    btn_lock_ready()
+                }
+                UNLOCKED -> {
+                    btn_lock.setBackgroundResource(R.drawable.ic_auto_unlock)
+                    iv_factory.visibility = View.VISIBLE
+                    btn_lock_ready()
+                }
+            }
+        }
+
+        bleViewModel.mCharacteristicValue.observe(this){
+            when(it){
+                "C0" -> {
+//                    showLog("C0 notyfy ramNum2\nApp use it to generateKeyTwo and ready to send C1")
+                    oneLockViewModel.mLockConnectionInfo.value?.permanentToken?.let { permanentToken ->
+                        if(permanentToken.isBlank())bleViewModel.sendC1withOTToken(oneLockViewModel.mLockConnectionInfo.value?.oneTimeToken?:return@let)
+                        else bleViewModel.sendC1(permanentToken)
+                    }
+                }
+                "C7" -> {
+                    oneLockViewModel.updateLockAdminCode("0000")
+                }
+            }
+        }
 
         //click and go to scan page
         iv_my_lock_ble_status.setOnClickListener {
@@ -126,7 +165,7 @@ class OneLockFragment: BaseFragment() {
 
         //click to lock/unlock
         btn_lock.setOnClickListener {
-            sendD7(mLockSetting?.status == LOCKED)
+            bleViewModel.sendD7(bleViewModel.mLockSetting.value?.status == LOCKED)
             btn_lock_wait()
         }
 
@@ -181,7 +220,7 @@ class OneLockFragment: BaseFragment() {
         iv_factory.setOnClickListener {
             //check admincode
             //factory reset
-            sendCE()
+//            sendCE()
         }
 
     }
@@ -195,8 +234,8 @@ class OneLockFragment: BaseFragment() {
     }
 
     private fun bleScan() {
-        mBluetoothManager = requireContext().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
-        mBluetoothLeScanner = (mBluetoothManager?:return).adapter.bluetoothLeScanner
+//        mBluetoothManager = requireContext().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+//        mBluetoothLeScanner = (mBluetoothManager?:return).adapter.bluetoothLeScanner
 
 //        test block before scan
 //        runBlocking(Dispatchers.Default){
@@ -208,59 +247,61 @@ class OneLockFragment: BaseFragment() {
 //                Log.d("TAG","Block for ${timestamp_} seconds.")
 //            }
 //        }
-
-        mBluetoothLeScanner?.startScan(mScanCallback) // 開始搜尋
+        bleViewModel.bleScan(oneLockViewModel.mLockConnectionInfo.value?.macAddress?:return)
+//        mBluetoothLeScanner?.startScan(mScanCallback) // 開始搜尋
         requireActivity().runOnUiThread{ oneLockViewModel.mLockBleStatus.value = true }//Start icon animation
         //using requireActivity() might meet Fragment not attached to Activity error and crash.
-        uiScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-            try{
-                var timestamp_ = 0
-                while(timestamp_<30) {
-                    delay(1000)
-                    timestamp_ += 1
-                    requireActivity().runOnUiThread{
-                        showLog("Had scanned for ${timestamp_} seconds.")
-                    }
-                }
-            }finally {
-                requireActivity().runOnUiThread{
-                    showLog("Stop ble scan and counting.")
-                    mBluetoothLeScanner?.stopScan(mScanCallback)
-                    //沒有在連gatt，藍芽scan已逾時(30sec)
-                    if (mBluetoothGatt == null) {
-                        oneLockViewModel.mLockBleStatus.value = false
-                    }
-                }
-            }
-        }
+//        uiScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+//            try{
+//                var timestamp_ = 0
+//                while(timestamp_<30) {
+//                    delay(1000)
+//                    timestamp_ += 1
+//                    requireActivity().runOnUiThread{
+//                        showLog("Had scanned for ${timestamp_} seconds.")
+//                    }
+//                }
+//            }finally {
+//                requireActivity().runOnUiThread{
+//                    showLog("Stop ble scan and counting.")
+////                    mBluetoothLeScanner?.stopScan(mScanCallback)
+//                    bleViewModel.pauseScan()
+//                    //沒有在連gatt，藍芽scan已逾時(30sec)
+//                    //todo
+////                    if (mBluetoothGatt == null) {
+////                        oneLockViewModel.mLockBleStatus.value = false
+////                    }
+//                }
+//            }
+//        }
 
     }
-    private val mScanCallback = object: ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult?) {
-            super.onScanResult(callbackType, result)
-
-            if (result?.device?.address == oneLockViewModel.mLockConnectionInfo.value?.macAddress) {
-
-                showLog("Find device: ${result?.device?.name}")
-
-                mBluetoothGatt = result?.device?.connectGatt(requireActivity(), false, mBluetoothGattCallback)
-
-                pauseScan()
-            }
-        }
-
-        override fun onBatchScanResults(results: MutableList<ScanResult>?) {
-            super.onBatchScanResults(results)
-        }
-
-    }
-
-    private fun pauseScan() {
-        if (mBluetoothLeScanner != null) {
-            mBluetoothLeScanner?.stopScan(mScanCallback)
-            uiScope?.cancel()
-        }
-    }
+//    private val mScanCallback = object: ScanCallback() {
+//        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+//            super.onScanResult(callbackType, result)
+//
+//            if (result?.device?.address == oneLockViewModel.mLockConnectionInfo.value?.macAddress) {
+//
+//                showLog("Find device: ${result?.device?.name}")
+//
+//                mBluetoothGatt = result?.device?.connectGatt(requireActivity(), false, mBluetoothGattCallback)
+//
+//                pauseScan()
+//            }
+//        }
+//
+//        override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+//            super.onBatchScanResults(results)
+//        }
+//
+//    }
+//
+//    private fun pauseScan() {
+//        if (mBluetoothLeScanner != null) {
+//            mBluetoothLeScanner?.stopScan(mScanCallback)
+//            uiScope?.cancel()
+//        }
+//    }
 
     override fun onPause() {
         Log.d("TAG","onPause")
@@ -294,6 +335,7 @@ class OneLockFragment: BaseFragment() {
 
     override fun onBackPressed() {
         Log.d("TAG","onBackPressed")
+        bleViewModel.CloseGattScope()
         Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_all)
     }
 
@@ -308,14 +350,14 @@ class OneLockFragment: BaseFragment() {
 
 
     private fun closeBLEGatt() {
-        if (mBluetoothGatt != null) {
-            mBluetoothGatt?.disconnect()
-            mBluetoothGatt?.close()
-            mBluetoothAdapter?.cancelDiscovery()
-            mBluetoothLeScanner?.stopScan(mScanCallback)
-            oneLockViewModel.mLockBleStatus.value = false
-            mLockSetting = null
-        }
+//        if (mBluetoothGatt != null) {
+//            mBluetoothGatt?.disconnect()
+//            mBluetoothGatt?.close()
+//            mBluetoothAdapter?.cancelDiscovery()
+//            mBluetoothLeScanner?.stopScan(mScanCallback)
+//            oneLockViewModel.mLockBleStatus.value = false
+//            mLockSetting = null
+//        }
     }
 
     private fun checkBTenable(): Boolean {
@@ -367,7 +409,7 @@ class OneLockFragment: BaseFragment() {
         }
 
     }
-
+/*
     val mBluetoothGattCallback = object: BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
             when(status){
@@ -378,7 +420,7 @@ class OneLockFragment: BaseFragment() {
                 else -> {
                     requireActivity().runOnUiThread {
                         oneLockViewModel.mLockBleStatus.value = false
-                        pauseScan()
+//                        pauseScan()
                         closeBLEGatt()
                         //133通常需要重啟手機藍芽
                         showLog("GATT連線出錯: ${status}")
@@ -456,6 +498,7 @@ class OneLockFragment: BaseFragment() {
 
                 }
             }
+            //todo
             val decrypted2 = oneLockViewModel.decrypt(
                 keyTwo?:return,
                 characteristic.value
@@ -671,7 +714,7 @@ class OneLockFragment: BaseFragment() {
             ((randomNumberOne[i].unSignedInt()) xor (randomNumberTwo[i].unSignedInt())).toByte()
         function.invoke(keyTwo)
     }
-
+*/
     private fun readSharedPreference() {
         mSharedPreferences = requireActivity().getSharedPreferences(DATA, 0)
         mQRcode = mSharedPreferences.getString(MY_LOCK_QRCODE, "")

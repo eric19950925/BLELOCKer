@@ -58,6 +58,26 @@ class OneLockViewModel(private val repository: LockConnInfoRepository): ViewMode
         mLockConnectionInfo.value = newLockInfo
     }
 
+    fun updateLockAdminCode(code: String) = viewModelScope.launch {
+        val newLockInfo = (mLockConnectionInfo.value?:return@launch).let {
+            LockConnectionInformation(
+                macAddress = it.macAddress,
+                displayName = it.displayName,
+                keyOne = it.keyOne,
+                keyTwo = it.keyTwo,
+                oneTimeToken = it.oneTimeToken,
+                permanentToken = it.permanentToken,
+                isOwnerToken = it.isOwnerToken,
+                tokenName = "T",
+                sharedFrom = it.sharedFrom,
+                index = 0,
+                adminCode = code
+            )
+        }
+        repository.LockInsert(newLockInfo)
+        mLockConnectionInfo.value = newLockInfo
+    }
+
     fun extractToken(byteArray: ByteArray): DeviceToken {
         return if (byteArray.component1().unSignedInt() == 0) {
 //            throw ConnectionTokenException.IllegalTokenException()
