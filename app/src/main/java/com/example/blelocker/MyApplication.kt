@@ -20,7 +20,8 @@ class MyApplication: Application() {
                 databaseModule,
                 repositoryModule,
                 viewModelModules,
-                bluetoothModule
+                bluetoothModule,
+                GithubModule
             ))
         }
     }

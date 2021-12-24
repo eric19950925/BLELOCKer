@@ -8,6 +8,7 @@ import com.example.blelocker.OneLockViewModel
 import com.example.blelocker.R
 import com.example.blelocker.entity.LockConnectionInformation
 import kotlinx.android.synthetic.main.fragment_all_locks.*
+import kotlinx.android.synthetic.main.fragment_all_locks.my_toolbar
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class AllLocksFragment : BaseFragment(){
@@ -19,6 +20,7 @@ class AllLocksFragment : BaseFragment(){
         setHasOptionsMenu(true)
         my_toolbar.menu.clear()
         my_toolbar.inflateMenu(R.menu.my_menu)
+        my_toolbar.menu.findItem(R.id.github).isVisible = true
         my_toolbar.menu.findItem(R.id.play).isVisible = false
         my_toolbar.menu.findItem(R.id.delete).isVisible = false
         my_toolbar.title = "All Locks"
@@ -52,6 +54,10 @@ class AllLocksFragment : BaseFragment(){
 //                    )
 //                    oneLockViewModel.insertLock(sample_lock)
 //                    count++
+                    true
+                }
+                R.id.github -> {
+                    Navigation.findNavController(requireView()).navigate(R.id.action_alllocks_to_github)
                     true
                 }
                 R.id.delete -> {

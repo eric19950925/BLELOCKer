@@ -21,6 +21,12 @@
         android:title="delete"
         app:showAsAction="ifRoom"/>
     <item
+        android:id="@+id/github"
+        android:icon="@drawable/ic_github"
+        android:title="github"
+        android:visible="false"
+        app:showAsAction="ifRoom"/>
+    <item
         android:id="@+id/scan"
         android:icon="@drawable/ic_scan_white"
         android:title="scan"

@@ -22,6 +22,28 @@
             android:id="@+id/action_back_to_alllocks"
             app:destination="@id/all_locks_Fragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/github_Fragment"
+        android:name="com.example.blelocker.View.GithubFragment"
+        tools:layout="@layout/fragment_git_hub">
+        <action
+            android:id="@+id/action_back_to_alllocks"
+            app:destination="@id/all_locks_Fragment" />
+        <action
+            android:id="@+id/action_to_commits"
+            app:destination="@id/commit_Fragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/commit_Fragment"
+        android:name="com.example.blelocker.View.CommitFragment"
+        tools:layout="@layout/fragment_commits">
+        <action
+            android:id="@+id/action_back_to_github"
+            app:destination="@id/github_Fragment" />
+    </fragment>
+
     <fragment
         android:id="@+id/all_locks_Fragment"
         android:name="com.example.blelocker.View.AllLocksFragment"
@@ -29,6 +51,9 @@
         <action
             android:id="@+id/action_alllocks_to_scan"
             app:destination="@id/scan_Fragment" />
+        <action
+            android:id="@+id/action_alllocks_to_github"
+            app:destination="@id/github_Fragment" />
         <action
             android:id="@+id/action_to_onelock"
             app:destination="@id/one_lock_Fragment" />
