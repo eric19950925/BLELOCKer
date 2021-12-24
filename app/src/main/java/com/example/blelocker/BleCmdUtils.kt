@@ -1,11 +1,8 @@
 package com.example.blelocker
 
-import android.annotation.SuppressLint
 import android.util.Base64
 import android.util.Log
-import androidx.lifecycle.viewModelScope
 import com.example.blelocker.entity.*
-import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.atomic.AtomicInteger
@@ -83,7 +80,7 @@ class BleCmdUtils {
             0xC7 -> c7(serialIncrementAndGet(), key, data)
 //            0xC8 -> c8(serialIncrementAndGet(), key, data)
 //            0xCC -> cc(serialIncrementAndGet(), key)
-//            0xCE -> ce(serialIncrementAndGet(), key, data)
+            0xCE -> ce(serialIncrementAndGet(), key, data)
 //            0xD0 -> d0(serialIncrementAndGet(), key)
 //            0xD1 -> d1(serialIncrementAndGet(), key, data)
 //            0xD2 -> d2(serialIncrementAndGet(), key)
