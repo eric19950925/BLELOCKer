@@ -1,7 +1,7 @@
 package com.example.blelocker.Model
 
 import androidx.room.*
-import com.example.blelocker.entity.LockConnectionInformation
+import com.example.blelocker.Entity.LockConnectionInformation
 import kotlinx.coroutines.flow.Flow
 
 @Dao

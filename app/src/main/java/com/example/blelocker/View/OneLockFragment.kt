@@ -19,27 +19,27 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
 import com.example.blelocker.*
+import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.example.blelocker.MainActivity.Companion.DATA
 import com.example.blelocker.MainActivity.Companion.MY_LOCK_QRCODE
-import com.example.blelocker.entity.DeviceToken
-import com.example.blelocker.entity.LockSetting
-import com.example.blelocker.entity.LockStatus.LOCKED
-import com.example.blelocker.entity.LockStatus.UNLOCKED
+import com.example.blelocker.Entity.DeviceToken
+import com.example.blelocker.Entity.LockSetting
+import com.example.blelocker.Entity.LockStatus.LOCKED
+import com.example.blelocker.Entity.LockStatus.UNLOCKED
 import kotlinx.android.synthetic.main.fragment_onelock.*
 import kotlinx.coroutines.*
-import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.io.IOException
 import java.util.*
 
 class OneLockFragment: BaseFragment() {
     override fun getLayoutRes(): Int = R.layout.fragment_onelock
-    val oneLockViewModel by viewModel<OneLockViewModel>()
-    val bleViewModel by viewModel<BleControlViewModel>()
+    val oneLockViewModel by sharedViewModel<OneLockViewModel>()
+    val bleViewModel by sharedViewModel<BleControlViewModel>()
 
     private lateinit var mSharedPreferences: SharedPreferences
     private var mBluetoothManager: BluetoothManager? = null
     var isLockFromSharing: Boolean? = null
-    var mLockSetting: LockSetting? = null
     var mPermanentToken: String? = null
     var mQRcode: String? = null
     var testScope: Job? = null
@@ -83,17 +83,14 @@ class OneLockFragment: BaseFragment() {
 
             if(it != true){
                 iv_my_lock_ble_status.visibility = View.VISIBLE
-                btn_lock.clearAnimation()
                 btn_lock.visibility = View.GONE
+                ll_panel.visibility = View.GONE
                 iv_factory.visibility = View.GONE
-                mLockSetting = null
-            }else{
+                bleViewModel.mLockSetting.value = null
+            } else {
                 iv_my_lock_ble_status.visibility = View.GONE
                 btn_lock.visibility = View.VISIBLE
-                if(mLockSetting != null)return@observe
-                btn_lock.setBackgroundResource(R.drawable.ic_loading_main)
-                btn_lock.startAnimation(rotateAnimation)
-                btn_lock_wait()
+                updateUIbySetting()
             }
 
         }
@@ -104,6 +101,7 @@ class OneLockFragment: BaseFragment() {
         }
 
         bleViewModel.mDescriptorValue.observe(this){
+            if(hadConn())return@observe
             if(it)bleViewModel.sendC0(oneLockViewModel.mLockConnectionInfo.value?.keyOne?:return@observe)
         }
 
@@ -133,15 +131,12 @@ class OneLockFragment: BaseFragment() {
                     }
                 }
                 "D6" -> {
-                    //update ui
-                    btn_lock.clearAnimation()
-                    iv_factory.visibility = View.VISIBLE
-                    btn_lock_ready()
-                    mLockSetting = it.second as LockSetting
-                    when ((it.second as LockSetting).status) {
-                        LOCKED -> btn_lock.setBackgroundResource(R.drawable.ic_lock_main)
-                        UNLOCKED -> btn_lock.setBackgroundResource(R.drawable.ic_auto_unlock)
+
+                    viewLifecycleOwner.lifecycleScope.launch{
+                        bleViewModel.mLockSetting.value = it.second as LockSetting
+                        updateUIbySetting()
                     }
+
                 }
                 "E5" -> {
                     oneLockViewModel.updateLockPermanentToken((it.second as DeviceToken.PermanentToken).token)
@@ -159,7 +154,7 @@ class OneLockFragment: BaseFragment() {
 
         //click to lock/unlock
         btn_lock.setOnClickListener {
-            bleViewModel.sendD7(mLockSetting?.status == LOCKED)
+            bleViewModel.sendD7(bleViewModel.mLockSetting.value?.status == LOCKED)
             btn_lock_wait()
         }
 
@@ -213,6 +208,35 @@ class OneLockFragment: BaseFragment() {
             bleViewModel.sendCE()
         }
 
+        btn_setting.setOnClickListener {
+            Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_setting)
+        }
+
+    }
+
+    private fun hadConn(): Boolean {
+        return bleViewModel.mLockSetting.value != null
+    }
+
+    private fun updateUIbySetting() {
+        bleViewModel.mLockSetting.value.let {
+            if(it == null){
+                btn_lock.setBackgroundResource(R.drawable.ic_loading_main)
+                btn_lock.startAnimation(rotateAnimation)
+                iv_factory.visibility = View.GONE
+                ll_panel.visibility = View.GONE
+                btn_lock_wait()
+            }else{
+                btn_lock.clearAnimation()
+                iv_factory.visibility = View.VISIBLE
+                ll_panel.visibility = View.VISIBLE
+                btn_lock_ready()
+                when(it.status){
+                    LOCKED -> btn_lock.setBackgroundResource(R.drawable.ic_lock_main)
+                    UNLOCKED -> btn_lock.setBackgroundResource(R.drawable.ic_auto_unlock)
+                }
+            }
+        }
     }
 
     private fun btn_lock_wait() {
@@ -274,8 +298,14 @@ class OneLockFragment: BaseFragment() {
 
     override fun onResume() {
         super.onResume()
+        cleanLog()
         //get lock info by macAddress
-        oneLockViewModel.getLockInfo(getArguments()?.getString("MAC_ADDRESS")?:return)
+        getArguments()?.getString("MAC_ADDRESS").let {
+            if(it.isNullOrBlank())return
+            oneLockViewModel.getLockInfo(it)
+        }
+        updateUIbySetting()
+
         //todo : auto ble conn
 
         Log.d("TAG","onResume")

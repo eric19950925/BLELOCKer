@@ -1,6 +1,5 @@
-package com.example.blelocker.View
+package com.example.blelocker.View.Github
 
-import android.os.Bundle
 import androidx.lifecycle.coroutineScope
 import androidx.navigation.Navigation
 import androidx.recyclerview.widget.LinearLayoutManager

@@ -12,8 +12,18 @@
         <action
             android:id="@+id/action_onelock_to_all"
             app:destination="@id/all_locks_Fragment" />
+        <action
+            android:id="@+id/action_onelock_to_setting"
+            app:destination="@id/setting_Fragment" />
     </fragment>
-
+    <fragment
+        android:id="@+id/setting_Fragment"
+        android:name="com.example.blelocker.View.SettingFragment"
+        tools:layout="@layout/fragment_setting">
+        <action
+            android:id="@+id/action_back_to_onelock"
+            app:destination="@id/one_lock_Fragment" />
+    </fragment>
     <fragment
         android:id="@+id/scan_Fragment"
         android:name="com.example.blelocker.View.AddLock.ScanFragment"
@@ -25,7 +35,7 @@
 
     <fragment
         android:id="@+id/github_Fragment"
-        android:name="com.example.blelocker.View.GithubFragment"
+        android:name="com.example.blelocker.View.Github.GithubFragment"
         tools:layout="@layout/fragment_git_hub">
         <action
             android:id="@+id/action_back_to_alllocks"
@@ -37,7 +47,7 @@
 
     <fragment
         android:id="@+id/commit_Fragment"
-        android:name="com.example.blelocker.View.CommitFragment"
+        android:name="com.example.blelocker.View.Github.CommitFragment"
         tools:layout="@layout/fragment_commits">
         <action
             android:id="@+id/action_back_to_github"

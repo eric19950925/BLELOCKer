@@ -1,4 +1,4 @@
-package com.example.blelocker
+package com.example.blelocker.BluetoothUtils
 
 import android.annotation.SuppressLint
 import android.bluetooth.*
@@ -10,8 +10,11 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.blelocker.entity.DeviceToken
-import com.example.blelocker.entity.LockSetting
+import com.example.blelocker.Entity.LockConfig
+import com.example.blelocker.Entity.LockSetting
+import com.example.blelocker.MainActivity
+import com.example.blelocker.toHex
+import com.example.blelocker.unSignedInt
 import kotlinx.android.synthetic.main.fragment_onelock.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,7 +24,7 @@ import java.util.*
 
 class BleControlViewModel(
     @SuppressLint("StaticFieldLeak") val context: Context,
-    private val mBleCmdUtils: BleCmdUtils
+    private val mBleCmdRepository: BleCmdRepository
     ): ViewModel() {
     private var mBluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private var mBluetoothLeScanner = mBluetoothManager.adapter.bluetoothLeScanner
@@ -40,6 +43,7 @@ class BleControlViewModel(
     var mCharacteristicValue = MutableLiveData<Pair<String, Any>>()
     var mDescriptorValue = MutableLiveData<Boolean>()
     val mLockBleStatus = MutableLiveData<Boolean>()
+    var mLockSetting = MutableLiveData<LockSetting>()
     var mGattStatus = MutableLiveData<Boolean>()
     var mLogText = MutableLiveData<String>()
 
@@ -158,11 +162,11 @@ class BleControlViewModel(
         }
 
         override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
-            val decrypted = mBleCmdUtils.decrypt(mKeyOne?:return, characteristic?.value?:return)
+            val decrypted = mBleCmdRepository.decrypt(mKeyOne?:return, characteristic?.value?:return)
             when(decrypted?.component3()?.unSignedInt()){
                 0xC0 -> {
 //                    Log.d("TAG","C0 notify ramNum2")
-                    mBleCmdUtils.generateKeyTwo(randomNumberOne?:return, mBleCmdUtils.resolveC0(mKeyOne?:return, characteristic.value)){
+                    mBleCmdRepository.generateKeyTwo(randomNumberOne?:return, mBleCmdRepository.resolveC0(mKeyOne?:return, characteristic.value)){
                         mKeyTwo = it
                         viewModelScope.launch { mCharacteristicValue.value = "C0" to true }
                     }
@@ -172,23 +176,23 @@ class BleControlViewModel(
                     Log.d("TAG","else")
                 }
             }
-            val decrypted2 = mBleCmdUtils.decrypt(mKeyTwo?:return, characteristic.value)
+            val decrypted2 = mBleCmdRepository.decrypt(mKeyTwo?:return, characteristic.value)
             when(decrypted2?.component3()?.unSignedInt()){
                 0xC1 -> {
-                    val dataFromDevice = mBleCmdUtils.resolveC1(mKeyTwo?:return, characteristic.value)
+                    val dataFromDevice = mBleCmdRepository.resolveC1(mKeyTwo?:return, characteristic.value)
                     if(dataFromDevice.toHex().length > 10){
                         Log.d("TAG","one time token : ${dataFromDevice.toHex()}")
                     }
                     else {
 //                    val deviceToken = determineTokenState(tokenStateFromDevice, isLockFromSharing?:return)
-                        val deviceToken = mBleCmdUtils.determineTokenState(dataFromDevice, false)
-                        val permission = mBleCmdUtils.determineTokenPermission(dataFromDevice)
+                        val deviceToken = mBleCmdRepository.determineTokenState(dataFromDevice, false)
+                        val permission = mBleCmdRepository.determineTokenPermission(dataFromDevice)
                         Log.d("TAG", "C1 notify token state : ${dataFromDevice.toHex()}")
                         Log.d("TAG", "token permission: $permission")
                     }
                 }
                 0xC7 -> {
-                    val dataFromDevice = mBleCmdUtils.resolveC7(mKeyTwo?:return, characteristic.value)
+                    val dataFromDevice = mBleCmdRepository.resolveC7(mKeyTwo?:return, characteristic.value)
                     if(dataFromDevice == true){
                         viewModelScope.launch { mCharacteristicValue.value = "C7" to true }
                         Log.d("TAG","admin pincode had been set.")
@@ -199,20 +203,37 @@ class BleControlViewModel(
                     }
                 }
                 0xCE -> {
-                    val dataFromDevice = mBleCmdUtils.resolveCE(mKeyTwo?:return, characteristic.value)
+                    val dataFromDevice = mBleCmdRepository.resolveCE(mKeyTwo?:return, characteristic.value)
                     if(dataFromDevice)CloseGattScope()
                     viewModelScope.launch { mCharacteristicValue.value = "CE" to dataFromDevice }
                 }
 
+                0xD4 -> {
+                    val current = mBleCmdRepository.resolveD4(mKeyTwo?:return, characteristic.value)
+                    viewModelScope.launch { mCharacteristicValue.value = "D4" to current }
+                    updateLogText("\nD4 notify Lock's setting: ${current}")
+
+                }
+
+                0xD5 -> {
+                    val current = mBleCmdRepository.resolveD5(mKeyTwo?:return, characteristic.value)
+                    viewModelScope.launch { mCharacteristicValue.value = "D5" to current }
+                    if (current) {
+                        updateLogText("\nD5 notify Set cfg success.")
+                    } else {
+                        updateLogText("\nD5 notify Set cfg failure.")
+                    }
+                }
+
                 0xD6 -> {
-                    val current = mBleCmdUtils.resolveD6(mKeyTwo?:return, characteristic.value)
+                    val current = mBleCmdRepository.resolveD6(mKeyTwo?:return, characteristic.value)
                     viewModelScope.launch { mCharacteristicValue.value = "D6" to current }
                     updateLogText("\nD6 notify Lock's setting: ${current}")
 
                 }
                 0xE5 -> {
-                    mBleCmdUtils.decrypt(mKeyTwo?:return, characteristic.value)?.let { bytes ->
-                        viewModelScope.launch { mCharacteristicValue.value = "E5" to mBleCmdUtils.extractToken(mBleCmdUtils.resolveE5(bytes)) }
+                    mBleCmdRepository.decrypt(mKeyTwo?:return, characteristic.value)?.let { bytes ->
+                        viewModelScope.launch { mCharacteristicValue.value = "E5" to mBleCmdRepository.extractToken(mBleCmdRepository.resolveE5(bytes)) }
                         sendC7()//有了token就設admin code
                     }
 
@@ -231,49 +252,61 @@ class BleControlViewModel(
     fun sendC0(init_keyOne: String) {
         mKeyOne = Base64.decode(init_keyOne, Base64.DEFAULT)
         viewModelScope.launch {
-            (notify_characteristic?:return@launch).value = mBleCmdUtils.createCommand(0xC0, mKeyOne?:return@launch)
+            (notify_characteristic?:return@launch).value = mBleCmdRepository.createCommand(0xC0, mKeyOne?:return@launch)
             updateLogText("\napp writeC0: ${notify_characteristic?.value}")
-            randomNumberOne = mBleCmdUtils.resolveC0(mKeyOne?:return@launch,notify_characteristic?.value?:return@launch)
+            randomNumberOne = mBleCmdRepository.resolveC0(mKeyOne?:return@launch,notify_characteristic?.value?:return@launch)
             mBluetoothGatt?.writeCharacteristic(notify_characteristic)
         }
     }
     fun sendC1(init_permanentToken: String) {
         val permanentToken = Base64.decode(init_permanentToken, Base64.DEFAULT)
 //        isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
-        notify_characteristic?.value = mBleCmdUtils.createCommand(0xC1, mKeyTwo?:return, permanentToken)
+        notify_characteristic?.value = mBleCmdRepository.createCommand(0xC1, mKeyTwo?:return, permanentToken)
         updateLogText("\napp writeC1: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
     fun sendC1withOTToken(init_oneTimeToken: String) {
         val permanentToken = Base64.decode(init_oneTimeToken, Base64.DEFAULT)
 //        isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
-        notify_characteristic?.value = mBleCmdUtils.createCommand(0xC1, mKeyTwo?:return, permanentToken)
+        notify_characteristic?.value = mBleCmdRepository.createCommand(0xC1, mKeyTwo?:return, permanentToken)
         updateLogText("\napp writeC1_OT: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
 
     private fun sendC7() {
 //        isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
-        notify_characteristic?.value = mBleCmdUtils.createCommand(0xC7, mKeyTwo?:return, mBleCmdUtils.stringCodeToHex("0000"))
+        notify_characteristic?.value = mBleCmdRepository.createCommand(0xC7, mKeyTwo?:return, mBleCmdRepository.stringCodeToHex("0000"))
         updateLogText("\napp writeC7: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
     fun sendCE(){
-        val adminCode = mBleCmdUtils.stringCodeToHex("0000")
+        val adminCode = mBleCmdRepository.stringCodeToHex("0000")
         val sendBytes = byteArrayOf(adminCode.size.toByte()) + adminCode
 //        isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
-        notify_characteristic?.value = mBleCmdUtils.createCommand(0xCE, mKeyTwo?:return, sendBytes)
+        notify_characteristic?.value = mBleCmdRepository.createCommand(0xCE, mKeyTwo?:return, sendBytes)
         updateLogText("\napp writeCE: ${notify_characteristic?.value}")
+        mBluetoothGatt?.writeCharacteristic(notify_characteristic)
+    }
+    fun getLockStatus(){
+        notify_characteristic?.value = mBleCmdRepository.createCommand(0xD4, mKeyTwo?:return)
+        updateLogText("\napp writeD4: ${notify_characteristic?.value}")
+        mBluetoothGatt?.writeCharacteristic(notify_characteristic)
+    }
+
+    fun setAutoLock(setting: LockConfig){
+        val setting_bytes = mBleCmdRepository.settingBytes(setting)
+        notify_characteristic?.value = mBleCmdRepository.createCommand(0xD5, mKeyTwo?:return, setting_bytes)
+        updateLogText("\napp writeD5: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
 
     private fun sendD6() {
-        notify_characteristic?.value = mBleCmdUtils.createCommand(0xD6, mKeyTwo?:return)
+        notify_characteristic?.value = mBleCmdRepository.createCommand(0xD6, mKeyTwo?:return)
 //        showLog("\napp writeD6: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
     fun sendD7(toLock: Boolean) {
-        notify_characteristic?.value = mBleCmdUtils.createCommand(
+        notify_characteristic?.value = mBleCmdRepository.createCommand(
             0xD7,
             mKeyTwo?:return,
             if(toLock)byteArrayOf(0x00)else byteArrayOf(0x01))

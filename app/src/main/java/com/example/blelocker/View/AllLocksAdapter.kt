@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.blelocker.R
-import com.example.blelocker.entity.LockConnectionInformation
+import com.example.blelocker.Entity.LockConnectionInformation
 import kotlinx.android.synthetic.main.alllocks_recyclerview_item.view.*
 
 class AllLocksAdapter(private val onClickListener: OnClickListener) : ListAdapter<LockConnectionInformation, AllLocksAdapter.AllLocksHolder>(LockComparator()) {

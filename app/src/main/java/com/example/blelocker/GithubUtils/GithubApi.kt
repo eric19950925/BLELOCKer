@@ -1,7 +1,7 @@
-package com.example.blelocker
+package com.example.blelocker.GithubUtils
 
-import com.example.blelocker.entity.GitHubCommits
-import com.example.blelocker.entity.GitHubUser
+import com.example.blelocker.Entity.GitHubCommits
+import com.example.blelocker.Entity.GitHubUser
 import retrofit2.Call
 import retrofit2.http.GET
 

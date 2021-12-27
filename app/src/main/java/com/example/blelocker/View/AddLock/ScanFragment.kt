@@ -8,7 +8,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.navigation.Navigation
 import com.example.blelocker.*
-import com.example.blelocker.entity.LockConnectionInformation
+import com.example.blelocker.Entity.LockConnectionInformation
 import com.google.zxing.integration.android.IntentIntegrator
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
@@ -64,7 +64,7 @@ class ScanFragment: BaseFragment() {
 
             }
 
-            oneLockViewModel.insertLock(LockConnectionInfo(data))
+            oneLockViewModel.insertNewLock(LockConnectionInfo(data))
             function.invoke(LockConnectionInfo(data).macAddress)
             Log.d("TAG",oneLockViewModel.mLockConnectionInfo.value.toString())
         } ?: throw IllegalArgumentException("Decrypted string is null")

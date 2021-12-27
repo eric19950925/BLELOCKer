@@ -6,7 +6,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.blelocker.BaseFragment
 import com.example.blelocker.OneLockViewModel
 import com.example.blelocker.R
-import com.example.blelocker.entity.LockConnectionInformation
 import kotlinx.android.synthetic.main.fragment_all_locks.*
 import kotlinx.android.synthetic.main.fragment_all_locks.my_toolbar
 import org.koin.androidx.viewmodel.ext.android.viewModel

@@ -2,6 +2,8 @@ package com.example.blelocker
 
 import android.app.Application
 import androidx.room.Room
+import com.example.blelocker.BluetoothUtils.BleCmdRepository
+import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.example.blelocker.Model.LockConnInfoDAO
 import com.example.blelocker.Model.LockConnInfoDatabase
 import com.example.blelocker.Model.LockConnInfoRepository
@@ -11,7 +13,7 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val bluetoothModule = module {
-    single { BleCmdUtils() }
+    single { BleCmdRepository() }
     viewModel { BleControlViewModel(androidContext(),get()) }
 }
 

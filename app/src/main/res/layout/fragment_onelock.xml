@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="?attr/colorOnSecondary"
+    android:background="?attr/colorPrimary"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -23,7 +23,7 @@
         android:textSize="14dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ll_my_lock" />
+        app:layout_constraintTop_toBottomOf="@+id/ll_panel" />
 
     <LinearLayout
         android:id="@+id/ll_my_lock"
@@ -31,8 +31,9 @@
         android:layout_height="100dp"
         android:orientation="horizontal"
         android:layout_marginBottom="2dp"
+        android:background="?attr/colorOnSecondary"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/log_tv"
+        app:layout_constraintBottom_toTopOf="@+id/ll_panel"
         app:layout_constraintTop_toBottomOf="@+id/my_toolbar">
         <LinearLayout
             android:id="@+id/ll_lock_data"
@@ -79,6 +80,27 @@
                 android:background="@drawable/ic_baseline_bluetooth_searching_24"
                 />
         </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/ll_panel"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:layout_marginBottom="2dp"
+        android:gravity="center|start"
+        android:background="?attr/colorOnSecondary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/log_tv"
+        app:layout_constraintTop_toBottomOf="@+id/ll_my_lock">
+        <Button
+            android:id="@+id/btn_setting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:text="setting"
+            />
 
     </LinearLayout>
     <Button

@@ -1,4 +1,4 @@
-package com.example.blelocker.entity
+package com.example.blelocker.Entity
 
 data class GitHubUser (
     val id: Long,

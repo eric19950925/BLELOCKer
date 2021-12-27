@@ -1,4 +1,4 @@
-package com.example.blelocker.entity
+package com.example.blelocker.Entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

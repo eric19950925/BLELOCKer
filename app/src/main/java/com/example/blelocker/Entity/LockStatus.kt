@@ -1,4 +1,4 @@
-package com.example.blelocker.entity
+package com.example.blelocker.Entity
 
 object LockStatus {
     const val LOCKED = 0

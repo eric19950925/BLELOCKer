@@ -1,21 +1,18 @@
-package com.example.blelocker.View
+package com.example.blelocker.View.Github
 
-import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.blelocker.R
-import com.example.blelocker.entity.Commit
-import com.example.blelocker.entity.GitHubCommits
-import com.example.blelocker.entity.LockConnectionInformation
-import kotlinx.android.synthetic.main.alllocks_recyclerview_item.view.*
-import kotlinx.android.synthetic.main.alllocks_recyclerview_item.view.tv_my_lock_mac
+import com.example.blelocker.View.inflate
+import com.example.blelocker.Entity.GitHubCommits
 import kotlinx.android.synthetic.main.commits_recyclerview_item.view.*
 
-class CommitsAdapter(private val onClickListener: OnClickListener) : ListAdapter<GitHubCommits, CommitsAdapter.CommitsHolder>(LockComparator()) {
+class CommitsAdapter(private val onClickListener: OnClickListener) : ListAdapter<GitHubCommits, CommitsAdapter.CommitsHolder>(
+    LockComparator()
+) {
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CommitsHolder {

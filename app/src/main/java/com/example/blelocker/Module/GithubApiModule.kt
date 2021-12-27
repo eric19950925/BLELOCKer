@@ -1,5 +1,7 @@
 package com.example.blelocker
 
+import com.example.blelocker.GithubUtils.GithubApi
+import com.example.blelocker.GithubUtils.GithubRepository
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder

@@ -4,10 +4,9 @@ import android.util.Base64
 import android.util.Log
 import androidx.lifecycle.*
 import com.example.blelocker.Model.LockConnInfoRepository
-import com.example.blelocker.entity.*
+import com.example.blelocker.Entity.*
 import com.google.gson.JsonParser
 import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicInteger
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
@@ -19,6 +18,10 @@ class OneLockViewModel(private val repository: LockConnInfoRepository): ViewMode
 
     fun insertLock(lockConnectionInformation: LockConnectionInformation) = viewModelScope.launch {
         if (repository.getLockConnectInformation(lockConnectionInformation.macAddress).macAddress.isNotBlank()) return@launch
+        repository.LockInsert(lockConnectionInformation)
+    }
+
+    fun insertNewLock(lockConnectionInformation: LockConnectionInformation) = viewModelScope.launch {
         repository.LockInsert(lockConnectionInformation)
     }
 

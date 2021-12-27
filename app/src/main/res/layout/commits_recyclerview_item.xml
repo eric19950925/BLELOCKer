@@ -6,12 +6,13 @@
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/ll_my_lock"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_margin="5dp"
         app:strokeWidth="2dp"
         app:strokeColor="?attr/colorPrimary"
         app:cardElevation="2dp"
+        app:cardBackgroundColor="?attr/colorOnSecondary"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -19,10 +20,11 @@
         <LinearLayout
             android:id="@+id/ll_lock_data"
             android:layout_width="match_parent"
-            android:layout_weight="7"
-            android:layout_height="80dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:orientation="vertical"
             android:layout_margin="5dp"
+            android:padding="2dp"
             >
             <TextView
                 android:layout_width="match_parent"

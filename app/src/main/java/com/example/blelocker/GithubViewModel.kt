@@ -3,9 +3,9 @@ package com.example.blelocker
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.blelocker.entity.GitHubCommits
-import com.example.blelocker.entity.GitHubUser
-import com.example.blelocker.entity.LoadingState
+import com.example.blelocker.GithubUtils.GithubRepository
+import com.example.blelocker.Entity.GitHubCommits
+import com.example.blelocker.Entity.LoadingState
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response

@@ -1,4 +1,4 @@
-package com.example.blelocker.View
+package com.example.blelocker.View.Github
 
 import android.text.Editable
 import android.text.TextWatcher
@@ -52,7 +52,7 @@ class GithubFragment: BaseFragment() {
             showLog(it.toString())
             viewLifecycleOwner.lifecycle.coroutineScope.launch {
                 if(githubViewModel.mCommits.value == null)return@launch
-                delay(5000)
+                delay(1000)
                 Navigation.findNavController(requireView()).navigate(R.id.action_to_commits)
             }
         })
