@@ -21,7 +21,7 @@ class AllLocksFragment : BaseFragment(){
         my_toolbar.inflateMenu(R.menu.my_menu)
         my_toolbar.menu.findItem(R.id.github).isVisible = true
         my_toolbar.menu.findItem(R.id.play).isVisible = false
-        my_toolbar.menu.findItem(R.id.delete).isVisible = false
+//        my_toolbar.menu.findItem(R.id.delete).isVisible = false
         my_toolbar.title = "All Locks"
 
 
@@ -60,7 +60,7 @@ class AllLocksFragment : BaseFragment(){
                     true
                 }
                 R.id.delete -> {
-//                    oneLockViewModel.deleteLocks()
+                    oneLockViewModel.deleteLocks()
                     true
                 }
                 else -> false

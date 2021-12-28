@@ -1,9 +1,13 @@
 package com.example.blelocker
 
+import android.content.DialogInterface
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AlertDialog
 import java.util.*
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class MainActivity : AppCompatActivity() {
 
@@ -17,12 +21,14 @@ class MainActivity : AppCompatActivity() {
         const val MY_LOCK_QRCODE = "MY_LOCK_QRCODE"
         const val MY_LOCK_TOKEN = "MY_LOCK_KEYTWO"
     }
+    private var disconnectDialog: AlertDialog? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            setContentView(R.layout.activity_main)
-            getSupportActionBar()?.hide()
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        getSupportActionBar()?.hide()
+        initDisconnectedDialog()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -30,7 +36,40 @@ class MainActivity : AppCompatActivity() {
         return findNavController(R.id.my_nav_host_fragment).navigateUp()
     }
 
+    private fun initDisconnectedDialog() {
+        disconnectDialog = MaterialAlertDialogBuilder(this, R.style.ThemeOverlay_App_MaterialAlertDialog)
+            .setTitle("Disconnect")
+            .setCancelable(false)
+            .setPositiveButton("confirm") { dialog: DialogInterface, _: Int ->
+                dialog.dismiss()
+                popupToOneLockPage()
+            }
+            .create()
+    }
 
+    private fun popupToOneLockPage() {
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment
+        navHostFragment.navController.let { nav ->
+            when (nav.currentDestination?.id) {
+                in listOf(
+//                    R.id.setting_Fragment,
+//                    R.id.permission_request,
+                    R.id.scan,
+//                    R.id.connect_to_lock,
+//                    R.id.add_admin_code
+                ) -> {
+//                    Timber.d("skip popup to home page.")
+                }
+                else -> nav.navigate(R.id.global_pop_inclusive_to_onelock)
+            }
+        }
+    }
+
+    fun launchDisconnectedDialog(cause: String = "") {
+        if (disconnectDialog?.isShowing == false /*&& !isCheckingOccupiedScanning*/) {
+            disconnectDialog?.show()
+        }
+    }
 
 
 }

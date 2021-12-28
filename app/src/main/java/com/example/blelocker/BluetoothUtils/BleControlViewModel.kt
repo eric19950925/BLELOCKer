@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.blelocker.Entity.BleStatus
 import com.example.blelocker.Entity.LockConfig
 import com.example.blelocker.Entity.LockSetting
 import com.example.blelocker.MainActivity
@@ -42,7 +43,7 @@ class BleControlViewModel(
 
     var mCharacteristicValue = MutableLiveData<Pair<String, Any>>()
     var mDescriptorValue = MutableLiveData<Boolean>()
-    val mLockBleStatus = MutableLiveData<Boolean>()
+    val mLockBleStatus = MutableLiveData<Int>()
     var mLockSetting = MutableLiveData<LockSetting>()
     var mGattStatus = MutableLiveData<Boolean>()
     var mLogText = MutableLiveData<String>()
@@ -51,6 +52,7 @@ class BleControlViewModel(
     fun bleScan(macAddress: String){
         mBluetoothLeScanner?.startScan(mScanCallback) // 開始搜尋
         bleScanScope = viewModelScope.launch(Dispatchers.Main){
+            mLockBleStatus.value = BleStatus.CONNECTTING
             try{
                 var timestamp_ = 0
                 while(timestamp_<30) {
@@ -63,7 +65,7 @@ class BleControlViewModel(
                 pauseScan()
                 //沒有在連gatt，藍芽scan已逾時(30sec)
                 if (mBluetoothGatt == null) {
-                    mLockBleStatus.value = false
+                    mLockBleStatus.value = BleStatus.UNCONNECT
                 }
             }
         }
@@ -114,7 +116,7 @@ class BleControlViewModel(
                     else -> updateLogText("GATT連線中斷")
                 }
                 else -> {
-                    viewModelScope.launch {mLockBleStatus.value = false}
+                    viewModelScope.launch {mLockBleStatus.value = BleStatus.UNCONNECT}
                     updateLogText("GATT連線出錯: ${status}")
                     CloseBleScanScope()
                     CloseGattScope()
@@ -128,7 +130,7 @@ class BleControlViewModel(
                     delay(10000)
                     //gatt探索逾時
                     if(mGattStatus.value == null){
-                        mLockBleStatus.value = false
+                        mLockBleStatus.value = BleStatus.UNCONNECT
                         closeBLEGatt()
                     }
                 }
@@ -227,7 +229,10 @@ class BleControlViewModel(
 
                 0xD6 -> {
                     val current = mBleCmdRepository.resolveD6(mKeyTwo?:return, characteristic.value)
-                    viewModelScope.launch { mCharacteristicValue.value = "D6" to current }
+                    viewModelScope.launch {
+                        mLockSetting.value = current
+                        mLockBleStatus.value = BleStatus.CONNECT
+                    }
                     updateLogText("\nD6 notify Lock's setting: ${current}")
 
                 }
@@ -326,7 +331,7 @@ class BleControlViewModel(
             mBluetoothLeScanner?.stopScan(mScanCallback)
             updateLogText("Stop bleGatt connection.")
             mGattStatus.value = false
-            mLockBleStatus.value = false
+            mLockBleStatus.value = BleStatus.UNCONNECT
         }
     }
 

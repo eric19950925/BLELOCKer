@@ -1,16 +1,19 @@
 package com.example.blelocker.View
 
+import android.annotation.SuppressLint
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
-import androidx.lifecycle.Observer
 import androidx.lifecycle.coroutineScope
 import androidx.navigation.Navigation
+import androidx.navigation.fragment.NavHostFragment
 import com.example.blelocker.BaseFragment
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
+import com.example.blelocker.Entity.BleStatus
 import com.example.blelocker.Entity.LockConfig
 import com.example.blelocker.Entity.LockSetting
+import com.example.blelocker.MainActivity
 import com.example.blelocker.R
 import kotlinx.android.synthetic.main.fragment_setting.*
 import kotlinx.android.synthetic.main.fragment_setting.log_tv
@@ -22,14 +25,15 @@ import java.io.IOException
 class SettingFragment: BaseFragment() {
     val bleViewModel by sharedViewModel<BleControlViewModel>()
     override fun getLayoutRes(): Int  = R.layout.fragment_setting
+    @SuppressLint("ClickableViewAccessibility")
     override fun onViewHasCreated() {
         //set top menu
         setHasOptionsMenu(true)
         my_toolbar.inflateMenu(R.menu.my_menu)
         my_toolbar.title = "Setting"
         my_toolbar.menu.findItem(R.id.scan).isVisible = false
-        my_toolbar.menu.findItem(R.id.github).isVisible = false
         my_toolbar.menu.findItem(R.id.play).isVisible = false
+        my_toolbar.menu.findItem(R.id.github).isVisible = false
         my_toolbar.menu.findItem(R.id.delete).isVisible = false
 
         //set log textview
@@ -64,7 +68,8 @@ class SettingFragment: BaseFragment() {
             }
             false
         }
-        bleViewModel.mCharacteristicValue.observe(this){
+
+        bleViewModel.mCharacteristicValue.observe(viewLifecycleOwner){
             when(it.first) {
                 "C7" -> {
 //                    oneLockViewModel.updateLockAdminCode("0000")
@@ -75,8 +80,6 @@ class SettingFragment: BaseFragment() {
                 "D4" -> {
                     requireActivity().runOnUiThread {
 
-                        switch_auto_lock.isClickable = true
-
                         val mCfg = it.second as LockConfig
 
                         switch_auto_lock.isChecked = mCfg.isAutoLock
@@ -84,31 +87,29 @@ class SettingFragment: BaseFragment() {
 
                 }
                 "D5" -> {
-                    viewLifecycleOwner.lifecycle.coroutineScope.launch {
-                        delay(3000)
-                        switch_auto_lock.isClickable = true
-                    }
+
                 }
                 "D6" -> {
-                    switch_auto_lock.isChecked = (it.second as LockSetting).config.isAutoLock
+                    bleViewModel.mLockSetting.value = it.second as LockSetting
+                    switch_auto_lock.isClickable = true
                 }
             }
         }
+
+        bleViewModel.mLockSetting.observe(viewLifecycleOwner){
+            switch_auto_lock.isChecked = it.config.isAutoLock
+        }
+
         //update log textview
-        bleViewModel.mLogText.observe(this){
+        bleViewModel.mLogText.observe(viewLifecycleOwner){
             showLog(it)
         }
-        bleViewModel.mLockBleStatus.observe(this, Observer {
-            Log.d("TAG","mLockBleStatus observe")
-            if(it == false){
-                Log.d("TAG","mLockBleStatus == false")
-                viewLifecycleOwner.lifecycle.coroutineScope.launch {
-//                    Navigation.findNavController(requireView()).navigate(R.id.action_back_to_onelock)
-                    switch_auto_lock.isClickable = false
-                }
-                //Even in scope , back_to_onelock still cause crash.
+
+        bleViewModel.mLockBleStatus.observe(viewLifecycleOwner) {
+            if(it == BleStatus.UNCONNECT){
+                (activity as MainActivity).launchDisconnectedDialog()
             }
-        })
+        }
 
     }
     private fun showLog(logText: String) {

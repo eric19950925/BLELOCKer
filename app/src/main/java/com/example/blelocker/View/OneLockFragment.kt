@@ -20,13 +20,16 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
 import com.example.blelocker.*
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
+import com.example.blelocker.Entity.BleStatus
 import com.example.blelocker.MainActivity.Companion.DATA
 import com.example.blelocker.MainActivity.Companion.MY_LOCK_QRCODE
 import com.example.blelocker.Entity.DeviceToken
-import com.example.blelocker.Entity.LockSetting
 import com.example.blelocker.Entity.LockStatus.LOCKED
 import com.example.blelocker.Entity.LockStatus.UNLOCKED
 import kotlinx.android.synthetic.main.fragment_onelock.*
+import kotlinx.android.synthetic.main.fragment_onelock.log_tv
+import kotlinx.android.synthetic.main.fragment_onelock.my_toolbar
+import kotlinx.android.synthetic.main.fragment_setting.*
 import kotlinx.coroutines.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.io.IOException
@@ -40,8 +43,6 @@ class OneLockFragment: BaseFragment() {
     private lateinit var mSharedPreferences: SharedPreferences
     private var mBluetoothManager: BluetoothManager? = null
     var isLockFromSharing: Boolean? = null
-    var mPermanentToken: String? = null
-    var mQRcode: String? = null
     var testScope: Job? = null
 
     private val rotateAnimation = RotateAnimation(
@@ -57,6 +58,7 @@ class OneLockFragment: BaseFragment() {
         //set top menu
         setHasOptionsMenu(true)
         my_toolbar.inflateMenu(R.menu.my_menu)
+        my_toolbar.menu.findItem(R.id.scan).isVisible = false
         my_toolbar.title = "BLE LOCKer"
 
         //set log textview
@@ -73,39 +75,47 @@ class OneLockFragment: BaseFragment() {
             }
         })
 
-        oneLockViewModel.mLockConnectionInfo.observe(this){
+        oneLockViewModel.mLockConnectionInfo.observe(viewLifecycleOwner){
             tv_my_lock_mac.setText(oneLockViewModel.mLockConnectionInfo.value?.macAddress)
             tv_my_lock_tk.setText(oneLockViewModel.mLockConnectionInfo.value?.permanentToken)
         }
 
         //observe the blue tooth connect status to update ui
-        bleViewModel.mLockBleStatus.observe(this){
-
-            if(it != true){
-                iv_my_lock_ble_status.visibility = View.VISIBLE
-                btn_lock.visibility = View.GONE
-                ll_panel.visibility = View.GONE
-                iv_factory.visibility = View.GONE
-                bleViewModel.mLockSetting.value = null
-            } else {
-                iv_my_lock_ble_status.visibility = View.GONE
-                btn_lock.visibility = View.VISIBLE
-                updateUIbySetting()
+        bleViewModel.mLockBleStatus.observe(viewLifecycleOwner){
+            when(it){
+                BleStatus.UNCONNECT -> {
+                    iv_my_lock_ble_status.visibility = View.VISIBLE
+                    btn_lock.visibility = View.GONE
+                    ll_panel.visibility = View.GONE
+                    iv_factory.visibility = View.GONE
+                    bleViewModel.mLockSetting.value = null
+                }
+                BleStatus.CONNECTTING -> {
+                    iv_my_lock_ble_status.visibility = View.GONE
+                    btn_lock.visibility = View.VISIBLE
+                    updateUIbySetting()
+                }
+                //back to this page from settings
+                BleStatus.CONNECT -> {
+                    iv_my_lock_ble_status.visibility = View.GONE
+                    btn_lock.visibility = View.VISIBLE
+                    updateUIbySetting()
+                }
             }
 
         }
 
         //update log textview
-        bleViewModel.mLogText.observe(this){
+        bleViewModel.mLogText.observe(viewLifecycleOwner){
             showLog(it)
         }
 
-        bleViewModel.mDescriptorValue.observe(this){
+        bleViewModel.mDescriptorValue.observe(viewLifecycleOwner){
             if(hadConn())return@observe
             if(it)bleViewModel.sendC0(oneLockViewModel.mLockConnectionInfo.value?.keyOne?:return@observe)
         }
 
-        bleViewModel.mCharacteristicValue.observe(this){
+        bleViewModel.mCharacteristicValue.observe(viewLifecycleOwner){
             when(it.first){
                 "C0" -> {
 //                    showLog("C0 notyfy ramNum2\nApp use it to generateKeyTwo and ready to send C1")
@@ -132,11 +142,6 @@ class OneLockFragment: BaseFragment() {
                 }
                 "D6" -> {
 
-                    viewLifecycleOwner.lifecycleScope.launch{
-                        bleViewModel.mLockSetting.value = it.second as LockSetting
-                        updateUIbySetting()
-                    }
-
                 }
                 "E5" -> {
                     oneLockViewModel.updateLockPermanentToken((it.second as DeviceToken.PermanentToken).token)
@@ -161,10 +166,6 @@ class OneLockFragment: BaseFragment() {
         //top menu function
         my_toolbar.setOnMenuItemClickListener {
             when(it.itemId){
-                R.id.scan -> {
-                    Navigation.findNavController(requireView()).navigate(R.id.action_back_to_alllocks)
-                    true
-                }
                 R.id.delete -> {
                     cleanLog()
                     true
@@ -259,7 +260,6 @@ class OneLockFragment: BaseFragment() {
 //            }
 //        }
         bleViewModel.bleScan(oneLockViewModel.mLockConnectionInfo.value?.macAddress?:return)
-        viewLifecycleOwner.lifecycleScope.launch{ bleViewModel.mLockBleStatus.value = true }//Start icon animation
 
     }
 
@@ -304,8 +304,6 @@ class OneLockFragment: BaseFragment() {
             if(it.isNullOrBlank())return
             oneLockViewModel.getLockInfo(it)
         }
-        updateUIbySetting()
-
         //todo : auto ble conn
 
         Log.d("TAG","onResume")
@@ -363,9 +361,7 @@ class OneLockFragment: BaseFragment() {
 
     private fun readSharedPreference() {
         mSharedPreferences = requireActivity().getSharedPreferences(DATA, 0)
-        mQRcode = mSharedPreferences.getString(MY_LOCK_QRCODE, "")
-        println("store QR: ${mQRcode}")
-        mPermanentToken = mSharedPreferences.getString(MainActivity.MY_LOCK_TOKEN, "")
+        val mQRcode = mSharedPreferences.getString(MY_LOCK_QRCODE, "")
         if(mQRcode.isNullOrBlank())return
         requireActivity().runOnUiThread {
             oneLockViewModel.decryptQRcode(mQRcode?:return@runOnUiThread){
@@ -392,9 +388,8 @@ class OneLockFragment: BaseFragment() {
     private fun saveData() {
         mSharedPreferences = requireActivity().getSharedPreferences(DATA, 0)
         mSharedPreferences.edit()
-            .putString(MY_LOCK_QRCODE, mQRcode)
-            .putString(MainActivity.MY_LOCK_TOKEN, mPermanentToken)
-            .commit()
+            .putString(MY_LOCK_QRCODE, "mQRcode")
+            .apply()
     }
 
     private fun claenSP(){
@@ -402,7 +397,7 @@ class OneLockFragment: BaseFragment() {
         mSharedPreferences.edit()
             .putString(MY_LOCK_QRCODE, "")
             .putString(MainActivity.MY_LOCK_TOKEN, "")
-            .commit()
+            .apply()
         tv_my_lock_mac.setText("")
         tv_my_lock_tk.setText("")
     }

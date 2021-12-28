@@ -10,3 +10,9 @@ object LockStatus {
     const val BATTERY_LOW = 1
     const val BATTERY_ALERT = 2
 }
+
+object BleStatus {
+    const val UNCONNECT = 0
+    const val CONNECTTING = 1
+    const val CONNECT = 2
+}

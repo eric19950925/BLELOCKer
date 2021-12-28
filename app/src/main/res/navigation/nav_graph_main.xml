@@ -5,6 +5,12 @@
     android:id="@+id/nav_graph_main"
     app:startDestination="@id/all_locks_Fragment">
 
+    <action
+        app:popUpToInclusive="true"
+        app:popUpTo="@id/one_lock_Fragment"
+        app:destination="@id/one_lock_Fragment"
+        android:id="@+id/global_pop_inclusive_to_onelock"/>
+
     <fragment
         android:id="@+id/one_lock_Fragment"
         android:name="com.example.blelocker.View.OneLockFragment"

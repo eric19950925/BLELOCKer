@@ -35,4 +35,39 @@
     <style name="styleView" parent="CardView">
         <item name="cardBackgroundColor">@color/md_theme_light_onPrimary</item>
     </style>
+    <style name="ThemeOverlay.App.MaterialAlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorPrimary">@color/md_theme_light_onPrimary</item>
+        <item name="colorSecondary">@color/md_theme_light_primary</item>
+        <item name="colorSurface">@color/md_theme_light_primary</item>
+        <item name="colorOnSurface">@color/md_theme_light_primary</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.App.Title.Text</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.App.Body.Text</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.App.PositiveButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.App.NegativeButton</item>
+    </style>
+    <style name="MaterialAlertDialog.App.Body.Text" parent="MaterialAlertDialog.MaterialComponents.Body.Text">
+        <item name="android:textColor">@color/md_theme_light_onPrimary</item>
+        <item name="android:ellipsize">none</item>
+        <item name="android:singleLine">false</item>
+    </style>
+
+    <style name="MaterialAlertDialog.App.Title.Text" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textColor">@color/md_theme_light_onPrimary</item>
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <style name="Widget.App.PositiveButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/md_theme_light_onPrimary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Widget.App.NegativeAction.PositiveButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/error</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Widget.App.NegativeButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/error</item>
+        <item name="android:textSize">14sp</item>
+    </style>
 </resources>
