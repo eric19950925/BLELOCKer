@@ -89,6 +89,12 @@ class OneLockFragment: BaseFragment() {
                     ll_panel.visibility = View.GONE
                     iv_factory.visibility = View.GONE
                     bleViewModel.mLockSetting.value = null
+                    //Auto Ble Conn: From Settings Page
+                    //Will cause other issue.
+//                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+//                        delay(1000)
+//                        checkToStartBleScan()
+//                    }
                 }
                 BleStatus.CONNECTTING -> {
                     iv_my_lock_ble_status.visibility = View.GONE
@@ -151,10 +157,7 @@ class OneLockFragment: BaseFragment() {
 
         //click and go to scan page
         iv_my_lock_ble_status.setOnClickListener {
-            if(checkPermissions()!=true)return@setOnClickListener
-            if(checkBTenable()!=true)return@setOnClickListener
-            if(oneLockViewModel.mLockConnectionInfo.value == null)return@setOnClickListener
-            bleScan()
+            checkToStartBleScan()
         }
 
         //click to lock/unlock
@@ -213,6 +216,13 @@ class OneLockFragment: BaseFragment() {
             Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_setting)
         }
 
+    }
+
+    private fun checkToStartBleScan() {
+        if(checkPermissions()!=true)return
+        if(checkBTenable()!=true)return
+        if(oneLockViewModel.mLockConnectionInfo.value == null)return
+        bleScan()
     }
 
     private fun hadConn(): Boolean {
@@ -303,8 +313,15 @@ class OneLockFragment: BaseFragment() {
         getArguments()?.getString("MAC_ADDRESS").let {
             if(it.isNullOrBlank())return
             oneLockViewModel.getLockInfo(it)
+
+            //Auto Ble Conn: Only From All Lock Page
+            //Before auto ble conn, need to clean argument first.
+            getArguments()?.remove("MAC_ADDRESS")
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                delay(1000)
+                checkToStartBleScan()
+            }
         }
-        //todo : auto ble conn
 
         Log.d("TAG","onResume")
     }

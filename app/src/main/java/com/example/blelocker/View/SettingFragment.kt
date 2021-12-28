@@ -21,6 +21,7 @@ import kotlinx.android.synthetic.main.fragment_setting.my_toolbar
 import kotlinx.coroutines.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.io.IOException
+import java.lang.Exception
 
 class SettingFragment: BaseFragment() {
     val bleViewModel by sharedViewModel<BleControlViewModel>()
@@ -108,6 +109,17 @@ class SettingFragment: BaseFragment() {
         bleViewModel.mLockBleStatus.observe(viewLifecycleOwner) {
             if(it == BleStatus.UNCONNECT){
                 (activity as MainActivity).launchDisconnectedDialog()
+                /*
+                viewLifecycleOwner.lifecycle.coroutineScope.launch {
+                    try{
+                        Navigation.findNavController(requireView()).navigate(R.id.action_back_to_onelock)
+                    }catch (e: Exception){
+                        Log.d("TAG",e.toString())
+                    }
+                }
+                // this way will crash due to Navigation cannot be found from the current destination
+                // need to find again.
+                */
             }
         }
 
