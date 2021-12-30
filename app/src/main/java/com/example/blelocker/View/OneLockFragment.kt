@@ -85,6 +85,7 @@ class OneLockFragment: BaseFragment() {
             when(it){
                 BleStatus.UNCONNECT -> {
                     iv_my_lock_ble_status.visibility = View.VISIBLE
+                    btn_lock.clearAnimation()
                     btn_lock.visibility = View.GONE
                     ll_panel.visibility = View.GONE
                     iv_factory.visibility = View.GONE

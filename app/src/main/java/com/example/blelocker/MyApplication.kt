@@ -21,7 +21,8 @@ class MyApplication: Application() {
                 repositoryModule,
                 viewModelModules,
                 bluetoothModule,
-                GithubModule
+                GithubModule,
+                cognitoModule
             ))
         }
     }

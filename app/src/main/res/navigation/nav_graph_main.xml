@@ -3,13 +3,32 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph_main"
-    app:startDestination="@id/all_locks_Fragment">
+    app:startDestination="@id/login_Fragment">
 
     <action
         app:popUpToInclusive="true"
         app:popUpTo="@id/one_lock_Fragment"
         app:destination="@id/one_lock_Fragment"
         android:id="@+id/global_pop_inclusive_to_onelock"/>
+    <fragment
+        android:id="@+id/login_Fragment"
+        android:name="com.example.blelocker.View.LoginFragment"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_login_to_signup"
+            app:destination="@id/signup_Fragment" />
+        <action
+            android:id="@+id/action_login_to_alllock"
+            app:destination="@id/all_locks_Fragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/signup_Fragment"
+        android:name="com.example.blelocker.View.SignUpFragment"
+        tools:layout="@layout/fragment_signup">
+        <action
+            android:id="@+id/action_back_to_login"
+            app:destination="@id/login_Fragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/one_lock_Fragment"
@@ -73,6 +92,9 @@
         <action
             android:id="@+id/action_to_onelock"
             app:destination="@id/one_lock_Fragment" />
+        <action
+            android:id="@+id/action_to_login"
+            app:destination="@id/login_Fragment" />
     </fragment>
 
 </navigation>

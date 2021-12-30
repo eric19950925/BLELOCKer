@@ -1,17 +1,27 @@
 package com.example.blelocker.View
 
 import android.os.Bundle
+import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
+import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.blelocker.BaseFragment
+import com.example.blelocker.CognitoUtils.CognitoControlViewModel
+import com.example.blelocker.CognitoUtils.LogOutRequest.*
+import com.example.blelocker.MainActivity
 import com.example.blelocker.OneLockViewModel
 import com.example.blelocker.R
 import kotlinx.android.synthetic.main.fragment_all_locks.*
 import kotlinx.android.synthetic.main.fragment_all_locks.my_toolbar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class AllLocksFragment : BaseFragment(){
     val oneLockViewModel by viewModel<OneLockViewModel>()
+    val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
     var count = 0
     override fun getLayoutRes(): Int = R.layout.fragment_all_locks
 
@@ -33,6 +43,11 @@ class AllLocksFragment : BaseFragment(){
 
         recyclerview.adapter = adapter
         recyclerview.layoutManager = LinearLayoutManager(requireContext())
+
+        cognitoViewModel.getAccessToken{
+            tv_user_id.text = cognitoViewModel.mUserID.value
+            tv_user_access_token.text = cognitoViewModel.mAccessToken.value
+        }
 
         my_toolbar.setOnMenuItemClickListener {
             when(it.itemId){
@@ -73,9 +88,31 @@ class AllLocksFragment : BaseFragment(){
                 my_toolbar.menu.findItem(R.id.scan).isVisible = false
             }
         }
+        btn_logout.setOnClickListener {
+            logOut()
+        }
+    }
+
+    private fun logOut()= viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
+        cognitoViewModel.LogOut { LogOutRequest ->
+            when(LogOutRequest){
+                SUCCESS -> {
+                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                        val navHostFragment = (activity as MainActivity).supportFragmentManager.findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment
+                        navHostFragment.navController.navigate(R.id.action_to_login)
+                    }
+//                    Navigation.findNavController(requireView()).navigate(R.id.action_to_login)
+//                    Toast.makeText(requireContext(), "Log out Success", Toast.LENGTH_LONG).show()
+                }
+                FAILURE -> {
+                    Toast.makeText(requireContext(), "Log out Failure", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     override fun onBackPressed() {
+//        logOut()
         requireActivity().finish()
     }
 }
