@@ -35,7 +35,7 @@
             android:layout_height="wrap_content"
             android:text="user AccessToken:"/>
         <TextView
-            android:id="@+id/tv_user_access_token"
+            android:id="@+id/tv_user_jwt_token"
             style="@style/styleText"
             android:ellipsize="end"
             android:maxLines="3"

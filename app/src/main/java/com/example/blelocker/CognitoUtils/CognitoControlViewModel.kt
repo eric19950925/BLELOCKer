@@ -20,8 +20,7 @@ import kotlinx.coroutines.launch
 import java.lang.Exception
 
 import com.amazonaws.auth.CognitoCachingCredentialsProvider
-
-
+import kotlinx.coroutines.Dispatchers
 
 
 class CognitoControlViewModel(val context: Context): ViewModel() {
@@ -41,7 +40,7 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
     private var userID: String? = null// Used for Login
     private var userMFAcode: String? = null // Used for Login with MFA
     private var currentUser = MutableLiveData<CognitoUser>()
-    var mAccessToken = MutableLiveData<String>()
+    var mJwtToken = MutableLiveData<String>()
     var mUserID = MutableLiveData<String>()
 
     val mLoginStatus = MutableLiveData<Int>()
@@ -137,7 +136,7 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
 //                            val username = toUsername((response["username"] ?: ""))
                             val password = response["password"] ?: ""
 //                            check(username.isNotEmpty()) { "username is empty" }
-                            check(password.isNotEmpty()) { "password is empty" }
+//                            check(password.isNotEmpty()) { "password is empty" }
 
                             continuation.setAuthenticationDetails(AuthenticationDetails(userId, password, null))
                             continuation.continueTask()
@@ -161,7 +160,8 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
                 }
 
                 override fun onFailure(exception: Exception?) {
-                    handleFailure(handler, exception?.message)
+                    handleFailure(handler, exception?.toString())
+                    handler(IdentityRequest.FAILURE, mapOf("exception" to exception)){}
                 }
 
             })
@@ -190,16 +190,21 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
     fun getAccessToken(function: () -> Unit) {
         currentUser.value?.getSessionInBackground(object :AuthenticationHandler{
             override fun onSuccess(userSession: CognitoUserSession?, newDevice: CognitoDevice?) {
-                mAccessToken.value = userSession?.idToken?.jwtToken
-                mUserID.value = userSession?.username
+                viewModelScope.launch(Dispatchers.Main) {
+                    mJwtToken.value = userSession?.idToken?.jwtToken
+                    mUserID.value = userSession?.username
 
-                val logins: MutableMap<String, String> = HashMap()
-                logins.put("cognito-idp.us-east-2.amazonaws.com/us-east-2_48Mq3KjSR", userSession?.idToken?.jwtToken.toString())
-                credentialsProvider?.setLogins(logins)
-                credentialsProvider?.identityId //use it to get aws service
+//                    viewModelScope.launch(Dispatchers.IO){
+//                        val logins: MutableMap<String, String> = HashMap()
+//                        logins.put("cognito-idp.us-east-2.amazonaws.com/us-east-2_48Mq3KjSR", userSession?.idToken?.jwtToken.toString())
+//                        credentialsProvider?.setLogins(logins)
+//                        val mIdentityId = credentialsProvider?.identityId //use it to get aws service
+//
+//                        Log.d("TAG",mIdentityId.toString())
+//                    }
 
-                Log.d("JWT",mAccessToken.value.toString())
-                function.invoke()
+                    function.invoke()
+                }
             }
 
             override fun getAuthenticationDetails(
@@ -220,6 +225,14 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
         })
     }
 
+    fun handleFailure(
+            handler: (IdentityRequest, Map<String, Exception>?, IdentityResponse: (Map<String, String>?) -> Unit) -> Unit,
+            message: String?
+        ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            Log.d("TAG",message.toString())
+        }
+    }
 }
 
 enum class IdentityRequest {
@@ -236,11 +249,5 @@ enum class LogOutRequest {
     FAILURE
 }
 //typealias IdentityResponse = (Map<String, String>?) -> Unit
-typealias IdentityHandler = (IdentityRequest, Map<String,String>?, IdentityResponse: (Map<String, String>?) -> Unit) -> Unit
+typealias IdentityHandler = (IdentityRequest, Map<String,Exception?>?, IdentityResponse: (Map<String, String>?) -> Unit) -> Unit
 typealias LogOutHandler = (LogOutRequest) -> Unit
-fun handleFailure(
-        handler: (IdentityRequest, Map<String, String>?, IdentityResponse: (Map<String, String>?) -> Unit) -> Unit,
-        message: String?
-    ) {
-
-}

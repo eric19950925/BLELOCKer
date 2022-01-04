@@ -4,14 +4,22 @@ import android.content.DialogInterface
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
+import com.amazonaws.AmazonClientException
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.exceptions.CognitoParameterInvalidException
+import com.amazonaws.services.cognitoidentityprovider.model.NotAuthorizedException
+import com.amazonaws.services.cognitoidentityprovider.model.UserNotFoundException
 import com.example.blelocker.BaseFragment
 import com.example.blelocker.CognitoUtils.CognitoControlViewModel
 import com.example.blelocker.CognitoUtils.IdentityRequest
 import com.example.blelocker.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.android.synthetic.main.fragment_login.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
+import java.net.UnknownHostException
 
 class LoginFragment: BaseFragment() {
     override fun getLayoutRes(): Int = R.layout.fragment_login
@@ -65,9 +73,28 @@ class LoginFragment: BaseFragment() {
                 }
 
                 IdentityRequest.FAILURE -> {
-                    Toast.makeText(requireContext(), "Sign in Failure", Toast.LENGTH_LONG).show()
+                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                        map?.let {
+                            when(it["exception"] as AmazonClientException ){
+                                is CognitoParameterInvalidException -> {
+                                    Toast.makeText(requireActivity(), "請填入帳號", Toast.LENGTH_LONG).show()
+                                }
+                                is UserNotFoundException -> {
+                                    Toast.makeText(requireActivity(), "找不到此帳號", Toast.LENGTH_LONG).show()
+                                }
+                                is NotAuthorizedException -> {
+                                    Toast.makeText(requireActivity(), "帳號或密碼錯誤", Toast.LENGTH_LONG).show()
+                                }
+                                else ->{
+                                    if( it["exception"]?.cause is UnknownHostException ){
+                                        Toast.makeText(requireActivity(), "網路錯誤", Toast.LENGTH_LONG).show()
+                                        return@let
+                                    }else Toast.makeText(requireActivity(), "發生某些錯誤", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                    }
                 }
-
                 else -> {
                     showErrorDialog()
                 }

@@ -46,7 +46,7 @@ class AllLocksFragment : BaseFragment(){
 
         cognitoViewModel.getAccessToken{
             tv_user_id.text = cognitoViewModel.mUserID.value
-            tv_user_access_token.text = cognitoViewModel.mAccessToken.value
+            tv_user_jwt_token.text = cognitoViewModel.mJwtToken.value
         }
 
         my_toolbar.setOnMenuItemClickListener {
@@ -105,7 +105,9 @@ class AllLocksFragment : BaseFragment(){
 //                    Toast.makeText(requireContext(), "Log out Success", Toast.LENGTH_LONG).show()
                 }
                 FAILURE -> {
-                    Toast.makeText(requireContext(), "Log out Failure", Toast.LENGTH_LONG).show()
+                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                        Toast.makeText(requireContext(), "Log out Failure", Toast.LENGTH_LONG).show()
+                    }
                 }
             }
         }
