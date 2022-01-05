@@ -16,3 +16,9 @@ object BleStatus {
     const val CONNECTTING = 1
     const val CONNECT = 2
 }
+
+object AdminCodeDialog {
+    const val INSERT = 0
+    const val UPDATE = 1
+    const val FACTORY_RESET = 2
+}

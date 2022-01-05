@@ -1,30 +1,31 @@
 package com.example.blelocker.View
 
 import android.annotation.SuppressLint
+import android.content.DialogInterface
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.method.ScrollingMovementMethod
-import android.util.Log
-import androidx.lifecycle.coroutineScope
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
-import androidx.navigation.fragment.NavHostFragment
 import com.example.blelocker.BaseFragment
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.example.blelocker.Entity.BleStatus
 import com.example.blelocker.Entity.LockConfig
 import com.example.blelocker.Entity.LockSetting
 import com.example.blelocker.MainActivity
+import com.example.blelocker.OneLockViewModel
 import com.example.blelocker.R
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.android.synthetic.main.fragment_setting.*
 import kotlinx.android.synthetic.main.fragment_setting.log_tv
 import kotlinx.android.synthetic.main.fragment_setting.my_toolbar
 import kotlinx.coroutines.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.io.IOException
-import java.lang.Exception
 
 class SettingFragment: BaseFragment() {
     val bleViewModel by sharedViewModel<BleControlViewModel>()
+    val oneLockViewModel by sharedViewModel<OneLockViewModel>()
     override fun getLayoutRes(): Int  = R.layout.fragment_setting
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewHasCreated() {
@@ -108,7 +109,8 @@ class SettingFragment: BaseFragment() {
 
         bleViewModel.mLockBleStatus.observe(viewLifecycleOwner) {
             if(it == BleStatus.UNCONNECT){
-                (activity as MainActivity).launchDisconnectedDialog()
+//                (activity as MainActivity).launchDisconnectedDialog()
+                showReConnDialog()
                 /*
                 viewLifecycleOwner.lifecycle.coroutineScope.launch {
                     try{
@@ -124,6 +126,19 @@ class SettingFragment: BaseFragment() {
         }
 
     }
+
+    private fun showReConnDialog() = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+        MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
+            .setTitle("Disconnect")
+            .setCancelable(false)
+            .setPositiveButton("reconnect") { dialog: DialogInterface, _: Int ->
+                dialog.dismiss()
+                oneLockViewModel.mLockConnectionInfo.value?.macAddress?.let {
+                    bleViewModel.bleScan(it)
+                }
+            }.show()
+    }
+
     private fun showLog(logText: String) {
         try {
             var log = log_tv.text.toString()

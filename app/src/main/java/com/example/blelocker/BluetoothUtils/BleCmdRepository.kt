@@ -416,25 +416,7 @@ class BleCmdRepository {
         }
     }
 
-    fun determineTokenPermission(data: ByteArray): String {
-        return String(data.copyOfRange(1, 2))
-    }
 
-
-    fun determineTokenState(data: ByteArray, isLockFromSharing: Boolean): Int {
-        return when (data.component1().unSignedInt()) {
-            //0 -> if (isLockFromSharing) throw ConnectionTokenException.LockFromSharingHasBeenUsedException() else throw ConnectionTokenException.IllegalTokenException()
-            1 -> Log.d("TAG","VALID_TOKEN")
-//                DeviceToken.VALID_TOKEN
-            // according to documentation, 2 -> the token has been swapped inside the device,
-            // hence the one time token no longer valid to connect.
-            //2 -> if (isLockFromSharing) throw ConnectionTokenException.LockFromSharingHasBeenUsedException() else throw ConnectionTokenException.DeviceRefusedException()
-            3 -> Log.d("TAG","ONE_TIME_TOKEN")
-//                DeviceToken.ONE_TIME_TOKEN
-            // 0, and else
-            else -> Log.d("TAG","IllegalTokenStateException") //if (isLockFromSharing) throw ConnectionTokenException.LockFromSharingHasBeenUsedException() else throw ConnectionTokenException.IllegalTokenStateException()
-        }
-    }
     fun stringCodeToHex(code: String): ByteArray {
         return code.takeIf { it.isNotBlank() }
             ?.filter { it.isDigit() }

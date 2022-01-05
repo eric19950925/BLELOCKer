@@ -1,13 +1,9 @@
 package com.example.blelocker.View
 
-import android.Manifest
 import android.animation.ValueAnimator
 import android.bluetooth.*
-import android.content.Context.BLUETOOTH_SERVICE
-import android.content.Intent
+import android.content.DialogInterface
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
-import android.os.Build
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.method.ScrollingMovementMethod
@@ -15,17 +11,20 @@ import android.util.Log
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
-import androidx.core.app.ActivityCompat
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
 import com.example.blelocker.*
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
+import com.example.blelocker.Entity.AdminCodeDialog
 import com.example.blelocker.Entity.BleStatus
 import com.example.blelocker.MainActivity.Companion.DATA
-import com.example.blelocker.MainActivity.Companion.MY_LOCK_QRCODE
 import com.example.blelocker.Entity.DeviceToken
 import com.example.blelocker.Entity.LockStatus.LOCKED
 import com.example.blelocker.Entity.LockStatus.UNLOCKED
+import com.example.blelocker.MainActivity.Companion.CURRENT_LOCK_MAC
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.android.synthetic.main.fragment_onelock.*
 import kotlinx.android.synthetic.main.fragment_onelock.log_tv
 import kotlinx.android.synthetic.main.fragment_onelock.my_toolbar
@@ -33,6 +32,7 @@ import kotlinx.android.synthetic.main.fragment_setting.*
 import kotlinx.coroutines.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.io.IOException
+import java.lang.Exception
 import java.util.*
 
 class OneLockFragment: BaseFragment() {
@@ -42,8 +42,10 @@ class OneLockFragment: BaseFragment() {
 
     private lateinit var mSharedPreferences: SharedPreferences
     private var mBluetoothManager: BluetoothManager? = null
-    var isLockFromSharing: Boolean? = null
-    var testScope: Job? = null
+    private var mAdminCode: String? = null
+    private var testScope: Job? = null
+    private var dialogScope: Job? = null
+    private var disconnectDialog: AlertDialog? = null
 
     private val rotateAnimation = RotateAnimation(
         0f, 359f,
@@ -75,9 +77,31 @@ class OneLockFragment: BaseFragment() {
             }
         })
 
+        dialogScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+            try{
+                var timestamp_ = 0
+                while(timestamp_<1000) {
+                    delay(1000)
+                    timestamp_ += 1
+                }
+            }finally {
+                disconnectDialog?.dismiss()
+            }
+        }
+        disconnectDialog = MaterialAlertDialogBuilder(requireActivity(), R.style.ThemeOverlay_App_MaterialAlertDialog)
+            .setTitle("Disconnect")
+            .setCancelable(true)
+            .setPositiveButton("reconnect") { _: DialogInterface, _: Int ->
+                oneLockViewModel.mLockConnectionInfo.value?.macAddress?.let {
+                    bleViewModel.bleScan(it)
+                    dialogScope?.cancel()
+                }
+            }.create()
+
+
         oneLockViewModel.mLockConnectionInfo.observe(viewLifecycleOwner){
-            tv_my_lock_mac.setText(oneLockViewModel.mLockConnectionInfo.value?.macAddress)
-            tv_my_lock_tk.setText(oneLockViewModel.mLockConnectionInfo.value?.permanentToken)
+            tv_my_lock_mac.text = oneLockViewModel.mLockConnectionInfo.value?.macAddress
+            tv_my_lock_tk.text = oneLockViewModel.mLockConnectionInfo.value?.permanentToken
         }
 
         //observe the blue tooth connect status to update ui
@@ -90,23 +114,30 @@ class OneLockFragment: BaseFragment() {
                     ll_panel.visibility = View.GONE
                     iv_factory.visibility = View.GONE
                     bleViewModel.mLockSetting.value = null
-                    //Auto Ble Conn: From Settings Page
-                    //Will cause other issue.
-//                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-//                        delay(1000)
-//                        checkToStartBleScan()
-//                    }
+//show disconnect dialog to help reconnect.
+                    disconnectDialog?.show()
+
                 }
                 BleStatus.CONNECTTING -> {
                     iv_my_lock_ble_status.visibility = View.GONE
                     btn_lock.visibility = View.VISIBLE
                     updateUIbySetting()
+                    disconnectDialog?.cancel()
                 }
                 //back to this page from settings
                 BleStatus.CONNECT -> {
                     iv_my_lock_ble_status.visibility = View.GONE
                     btn_lock.visibility = View.VISIBLE
                     updateUIbySetting()
+                    disconnectDialog?.cancel()
+                }
+                else -> {
+                    iv_my_lock_ble_status.visibility = View.VISIBLE
+                    btn_lock.clearAnimation()
+                    btn_lock.visibility = View.GONE
+                    ll_panel.visibility = View.GONE
+                    iv_factory.visibility = View.GONE
+                    bleViewModel.mLockSetting.value = null
                 }
             }
 
@@ -131,8 +162,25 @@ class OneLockFragment: BaseFragment() {
                         else bleViewModel.sendC1(permanentToken)
                     }
                 }
+                "C1" -> {
+                    val isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
+                    val deviceToken = oneLockViewModel.determineTokenState(it.second as ByteArray, isLockFromSharing)
+                    val permission = oneLockViewModel.determineTokenPermission(it.second as ByteArray)
+                    Log.d("TAG", "C1 notify token state : ${(it.second as ByteArray).toHex()}")
+                    Log.d("TAG", "token permission: $permission")
+                    oneLockViewModel.mLockConnectionInfo.value?.let {
+                        oneLockViewModel.updateLockConnectInformation(
+                            it.copy(
+                                permission = permission
+                            )
+                        )
+                    }
+
+                }
                 "C7" -> {
-                    oneLockViewModel.updateLockAdminCode("0000")
+                    try {
+                        oneLockViewModel.updateLockAdminCode(checkNotNull(mAdminCode))
+                    } catch (e:Exception) { Log.d("TAG",e.toString()) }
                 }
                 "CE" -> {
                     if(it.second == true){
@@ -151,7 +199,12 @@ class OneLockFragment: BaseFragment() {
 
                 }
                 "E5" -> {
-                    oneLockViewModel.updateLockPermanentToken((it.second as DeviceToken.PermanentToken).token)
+                    val mToken = it.second as DeviceToken.PermanentToken
+                    oneLockViewModel.updateLockPermanentToken(mToken)
+                    requireActivity().runOnUiThread {showLog("\nE5 notify Got PermanentToken: ${mToken.name} ${mToken.permission}.")}
+                    if (mToken.isOwner){
+                        launchAdminCodeDialog(AdminCodeDialog.INSERT)
+                    }
                 }
             }
         }
@@ -208,9 +261,7 @@ class OneLockFragment: BaseFragment() {
         }
 
         iv_factory.setOnClickListener {
-            //check admincode
-            //factory reset
-            bleViewModel.sendCE()
+            launchAdminCodeDialog(AdminCodeDialog.FACTORY_RESET)
         }
 
         btn_setting.setOnClickListener {
@@ -219,9 +270,57 @@ class OneLockFragment: BaseFragment() {
 
     }
 
+    private fun launchAdminCodeDialog(onNext: Int) {
+        val editText = EditText(requireActivity())
+        val dialog = MaterialAlertDialogBuilder(
+            requireActivity(),
+            R.style.ThemeOverlay_App_MaterialAlertDialog
+        )
+            .setCancelable(false)
+            .setTitle("Enter your Admin code:")
+            .setView(editText)
+            .setPositiveButton("confirm") { _: DialogInterface, _: Int ->
+                when(onNext){
+                    AdminCodeDialog.INSERT ->{
+                        bleViewModel.sendC7(editText.text.toString())
+                        mAdminCode = editText.text.toString()
+                    }
+                    AdminCodeDialog.UPDATE ->{
+
+                    }
+                    AdminCodeDialog.FACTORY_RESET ->{
+                        if(editText.text.toString() == oneLockViewModel.mLockConnectionInfo.value?.adminCode) bleViewModel.sendCE()
+                        else launchErrorDialog()
+                    }
+                }
+            }
+//            .setNegativeButton(getString(R.string.global_cancel)) { _: DialogInterface, _: Int ->
+//            }
+            .create()
+
+        if (!dialog.isShowing) {
+            dialog.show()
+        }
+    }
+
+    private fun launchErrorDialog() {
+        MaterialAlertDialogBuilder(
+            requireActivity(),
+            R.style.ThemeOverlay_App_MaterialAlertDialog
+        )
+            .setCancelable(false)
+            .setTitle("Error")
+            .setPositiveButton("confirm") { _: DialogInterface, _: Int ->
+
+            }
+//            .setNegativeButton(getString(R.string.global_cancel)) { _: DialogInterface, _: Int ->
+//            }
+            .show()
+    }
+
     private fun checkToStartBleScan() {
-        if(checkPermissions()!=true)return
-        if(checkBTenable()!=true)return
+//        if(checkPermissions()!=true)return
+//        if(checkBTenable()!=true)return
         if(oneLockViewModel.mLockConnectionInfo.value == null)return
         bleScan()
     }
@@ -303,6 +402,7 @@ class OneLockFragment: BaseFragment() {
     override fun onBackPressed() {
         Log.d("TAG","onBackPressed")
         bleViewModel.CloseGattScope()
+        bleViewModel.mLockBleStatus.value = null
         bleViewModel.CloseBleScanScope()
         Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_all)
     }
@@ -311,82 +411,36 @@ class OneLockFragment: BaseFragment() {
         super.onResume()
         cleanLog()
         //get lock info by macAddress
-        getArguments()?.getString("MAC_ADDRESS").let {
-            if(it.isNullOrBlank())return
-            oneLockViewModel.getLockInfo(it)
-
-            //Auto Ble Conn: Only From All Lock Page
-            //Before auto ble conn, need to clean argument first.
-            getArguments()?.remove("MAC_ADDRESS")
-            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                delay(1000)
-                checkToStartBleScan()
-            }
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+            delay(100)
+            oneLockViewModel.getLockInfo(readCurrentLockMac()?:return@launch)
+            if(bleViewModel.mLockBleStatus.value == BleStatus.CONNECT)return@launch
+            bleViewModel.bleScan(readCurrentLockMac()?:return@launch)
         }
+//        arguments?.getString("MAC_ADDRESS").let {
+//            if(it.isNullOrBlank())return
+//            try {
+//                checkNotNull(it)
+//                oneLockViewModel.getLockInfo(it)
+//                //Auto Ble Conn: Only From All Lock Page
+//                //Before auto ble conn, need to clean argument first.
+//                arguments?.remove("MAC_ADDRESS")
+//                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+//                    delay(1000)
+//                    checkToStartBleScan()
+//                }
+//            } catch (e:Exception) { Log.d("TAG",e.toString()) }
+//        }
 
         Log.d("TAG","onResume")
     }
 
-    private fun checkBTenable(): Boolean {
-        mBluetoothManager = requireContext().getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
-        mBluetoothManager?.adapter?.takeIf { !it.isEnabled }?.apply {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            startActivityForResult(enableBtIntent, 124)
-        }
-        return mBluetoothManager?.adapter?.isEnabled?:false
-    }
 
-    private fun checkPermissions() : Boolean{
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            requestPermissions(
-                arrayOf(
-                    Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION), 1)
-        } else {
-            ActivityCompat.requestPermissions(requireActivity(), arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION), 1)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) && PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) && PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.BLUETOOTH_SCAN
-            ) && PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.BLUETOOTH_CONNECT
-            )
-        } else {
-            return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) && PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        }
 
-    }
-
-    private fun readSharedPreference() {
+    private fun readCurrentLockMac(): String?{
         mSharedPreferences = requireActivity().getSharedPreferences(DATA, 0)
-        val mQRcode = mSharedPreferences.getString(MY_LOCK_QRCODE, "")
-        if(mQRcode.isNullOrBlank())return
-        requireActivity().runOnUiThread {
-            oneLockViewModel.decryptQRcode(mQRcode?:return@runOnUiThread){
-                tv_my_lock_mac.setText(oneLockViewModel.mLockConnectionInfo.value?.macAddress)
-                tv_my_lock_tk.setText(mSharedPreferences.getString(MainActivity.MY_LOCK_TOKEN, ""))
-            }
-        }
+        return mSharedPreferences.getString(CURRENT_LOCK_MAC, "")
+
     }
 
 
@@ -403,21 +457,18 @@ class OneLockFragment: BaseFragment() {
     private fun cleanLog() {
         log_tv.text = ""
     }
-    private fun saveData() {
+    private fun saveCurrentLockMac(macAddress: String) {
         mSharedPreferences = requireActivity().getSharedPreferences(DATA, 0)
         mSharedPreferences.edit()
-            .putString(MY_LOCK_QRCODE, "mQRcode")
+            .putString(CURRENT_LOCK_MAC, macAddress)
             .apply()
     }
 
-    private fun claenSP(){
+    private fun claenLockMac(){
         mSharedPreferences = requireActivity().getSharedPreferences(DATA, 0)
         mSharedPreferences.edit()
-            .putString(MY_LOCK_QRCODE, "")
-            .putString(MainActivity.MY_LOCK_TOKEN, "")
+            .putString(CURRENT_LOCK_MAC, "")
             .apply()
-        tv_my_lock_mac.setText("")
-        tv_my_lock_tk.setText("")
     }
 
 }

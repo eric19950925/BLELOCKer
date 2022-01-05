@@ -43,13 +43,14 @@ class BleControlViewModel(
 
     var mCharacteristicValue = MutableLiveData<Pair<String, Any>>()
     var mDescriptorValue = MutableLiveData<Boolean>()
-    val mLockBleStatus = MutableLiveData<Int>()
+    val mLockBleStatus = MutableLiveData<Int?>()
     var mLockSetting = MutableLiveData<LockSetting>()
     var mGattStatus = MutableLiveData<Boolean>()
     var mLogText = MutableLiveData<String>()
 
 
     fun bleScan(macAddress: String){
+        if(mBluetoothLeScanner == null)return
         mBluetoothLeScanner?.startScan(mScanCallback) // 開始搜尋
         bleScanScope = viewModelScope.launch(Dispatchers.Main){
             mLockBleStatus.value = BleStatus.CONNECTTING
@@ -58,14 +59,14 @@ class BleControlViewModel(
                 while(timestamp_<30) {
                     delay(1000)
                     timestamp_ += 1
-                    updateLogText("Had scanned for ${timestamp_} seconds.")
+                    updateLogText("Had scanned for $timestamp_ seconds.")
                 }
             }finally {
                 updateLogText("Stop ble scan and counting.")
                 pauseScan()
                 //沒有在連gatt，藍芽scan已逾時(30sec)
                 if (mBluetoothGatt == null) {
-                    mLockBleStatus.value = BleStatus.UNCONNECT
+                    mLockBleStatus.value = null
                 }
             }
         }
@@ -82,9 +83,11 @@ class BleControlViewModel(
                 mBluetoothGatt = result?.device?.connectGatt(context, false, mBluetoothGattCallback)
                 bleGattScope = viewModelScope.launch(Dispatchers.Main){
                     try{
+                        var timestamp_ = 0
                         while(true){
                             delay(10000)
-                            Log.d("TAG","bleGatt connecting...")
+                            timestamp_ += 10
+                            Log.d("TAG","bleGatt has connect for $timestamp_ sec.")
                         }
                     }finally {
                         Log.d("TAG","Stop bleGatt connection.")
@@ -120,6 +123,7 @@ class BleControlViewModel(
                     updateLogText("GATT連線出錯: ${status}")
                     CloseBleScanScope()
                     CloseGattScope()
+                    mLockBleStatus.value = BleStatus.UNCONNECT
                     //133通常需要重啟手機藍芽
                     pauseScan()
                 }
@@ -186,11 +190,7 @@ class BleControlViewModel(
                         Log.d("TAG","one time token : ${dataFromDevice.toHex()}")
                     }
                     else {
-//                    val deviceToken = determineTokenState(tokenStateFromDevice, isLockFromSharing?:return)
-                        val deviceToken = mBleCmdRepository.determineTokenState(dataFromDevice, false)
-                        val permission = mBleCmdRepository.determineTokenPermission(dataFromDevice)
-                        Log.d("TAG", "C1 notify token state : ${dataFromDevice.toHex()}")
-                        Log.d("TAG", "token permission: $permission")
+                        viewModelScope.launch { mCharacteristicValue.value = "C1" to dataFromDevice }
                     }
                 }
                 0xC7 -> {
@@ -206,7 +206,10 @@ class BleControlViewModel(
                 }
                 0xCE -> {
                     val dataFromDevice = mBleCmdRepository.resolveCE(mKeyTwo?:return, characteristic.value)
-                    if(dataFromDevice)CloseGattScope()
+                    if(dataFromDevice){
+                        CloseGattScope()
+                        mLockBleStatus.value = BleStatus.UNCONNECT
+                    }
                     viewModelScope.launch { mCharacteristicValue.value = "CE" to dataFromDevice }
                 }
 
@@ -239,7 +242,7 @@ class BleControlViewModel(
                 0xE5 -> {
                     mBleCmdRepository.decrypt(mKeyTwo?:return, characteristic.value)?.let { bytes ->
                         viewModelScope.launch { mCharacteristicValue.value = "E5" to mBleCmdRepository.extractToken(mBleCmdRepository.resolveE5(bytes)) }
-                        sendC7()//有了token就設admin code
+//                        sendC7()//有了token就設admin code
                     }
 
                 }
@@ -265,22 +268,20 @@ class BleControlViewModel(
     }
     fun sendC1(init_permanentToken: String) {
         val permanentToken = Base64.decode(init_permanentToken, Base64.DEFAULT)
-//        isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
         notify_characteristic?.value = mBleCmdRepository.createCommand(0xC1, mKeyTwo?:return, permanentToken)
         updateLogText("\napp writeC1: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
     fun sendC1withOTToken(init_oneTimeToken: String) {
         val permanentToken = Base64.decode(init_oneTimeToken, Base64.DEFAULT)
-//        isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
         notify_characteristic?.value = mBleCmdRepository.createCommand(0xC1, mKeyTwo?:return, permanentToken)
         updateLogText("\napp writeC1_OT: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
 
-    private fun sendC7() {
+    fun sendC7(code: String) {
 //        isLockFromSharing = oneLockViewModel.mLockConnectionInfo.value?.sharedFrom != null && oneLockViewModel.mLockConnectionInfo.value?.sharedFrom?.isNotBlank() ?: false
-        notify_characteristic?.value = mBleCmdRepository.createCommand(0xC7, mKeyTwo?:return, mBleCmdRepository.stringCodeToHex("0000"))
+        notify_characteristic?.value = mBleCmdRepository.createCommand(0xC7, mKeyTwo?:return, mBleCmdRepository.stringCodeToHex(code))
         updateLogText("\napp writeC7: ${notify_characteristic?.value}")
         mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
@@ -331,7 +332,6 @@ class BleControlViewModel(
             mBluetoothLeScanner?.stopScan(mScanCallback)
             updateLogText("Stop bleGatt connection.")
             mGattStatus.value = false
-            mLockBleStatus.value = BleStatus.UNCONNECT
         }
     }
 
@@ -348,6 +348,7 @@ class BleControlViewModel(
     //do when leave app
     override fun onCleared() {
         CloseGattScope()
+        mLockBleStatus.value = null
         CloseBleScanScope()
         super.onCleared()
     }

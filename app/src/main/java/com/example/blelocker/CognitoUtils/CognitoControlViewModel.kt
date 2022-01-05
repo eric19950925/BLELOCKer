@@ -194,6 +194,7 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
                     mJwtToken.value = userSession?.idToken?.jwtToken
                     mUserID.value = userSession?.username
 
+                    //todo
 //                    viewModelScope.launch(Dispatchers.IO){
 //                        val logins: MutableMap<String, String> = HashMap()
 //                        logins.put("cognito-idp.us-east-2.amazonaws.com/us-east-2_48Mq3KjSR", userSession?.idToken?.jwtToken.toString())

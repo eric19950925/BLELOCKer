@@ -18,8 +18,7 @@ class MainActivity : AppCompatActivity() {
         val NOTIFICATION_CHARACTERISTIC = UUID.fromString("de915dce-3539-61ea-ade7-d44a2237601f")
         val SUNION_SERVICE_UUID = UUID.fromString("fc3d8cf8-4ddc-7ade-1dd9-2497851131d7")
         const val DATA = "DATA"
-        const val MY_LOCK_QRCODE = "MY_LOCK_QRCODE"
-        const val MY_LOCK_TOKEN = "MY_LOCK_KEYTWO"
+        const val CURRENT_LOCK_MAC = "CURRENT_LOCK_MAC"
     }
     private var disconnectDialog: AlertDialog? = null
 

@@ -1,7 +1,16 @@
 package com.example.blelocker.View
 
+import android.Manifest
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
 import androidx.navigation.fragment.NavHostFragment
@@ -22,6 +31,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class AllLocksFragment : BaseFragment(){
     val oneLockViewModel by viewModel<OneLockViewModel>()
     val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
+    private lateinit var mSharedPreferences: SharedPreferences
     var count = 0
     override fun getLayoutRes(): Int = R.layout.fragment_all_locks
 
@@ -36,9 +46,12 @@ class AllLocksFragment : BaseFragment(){
 
 
         val adapter = AllLocksAdapter(AllLocksAdapter.OnClickListener{
-            val bundle = Bundle()
-            bundle.putString("MAC_ADDRESS", it)
-            Navigation.findNavController(requireView()).navigate(R.id.action_to_onelock,bundle)
+            if(!checkPermissions())return@OnClickListener
+            if(!checkBTenable())return@OnClickListener
+//            val bundle = Bundle()
+//            bundle.putString("MAC_ADDRESS", it)
+            saveCurrentLockMac(it)
+            Navigation.findNavController(requireView()).navigate(R.id.action_to_onelock/*,bundle*/)
         })
 
         recyclerview.adapter = adapter
@@ -112,9 +125,65 @@ class AllLocksFragment : BaseFragment(){
             }
         }
     }
+    private fun saveCurrentLockMac(macAddress: String) {
+        mSharedPreferences = requireActivity().getSharedPreferences(MainActivity.DATA, 0)
+        mSharedPreferences.edit()
+            .putString(MainActivity.CURRENT_LOCK_MAC, macAddress)
+            .apply()
+    }
 
     override fun onBackPressed() {
 //        logOut()
         requireActivity().finish()
     }
+    private fun checkPermissions() : Boolean{
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION), 1)
+        } else {
+            ActivityCompat.requestPermissions(requireActivity(), arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION), 1)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) && PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) && PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.BLUETOOTH_SCAN
+            ) && PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.BLUETOOTH_CONNECT
+            )
+        } else {
+            return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) && PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        }
+
+    }
+    private fun checkBTenable(): Boolean {
+        val mBluetoothManager = requireContext().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        mBluetoothManager.adapter?.takeIf { !it.isEnabled }?.apply {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, 124)
+        }
+        return mBluetoothManager.adapter?.isEnabled?:false
+    }
+
+
 }
