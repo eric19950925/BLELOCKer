@@ -19,6 +19,7 @@ class MainActivity : AppCompatActivity() {
         val SUNION_SERVICE_UUID = UUID.fromString("fc3d8cf8-4ddc-7ade-1dd9-2497851131d7")
         const val DATA = "DATA"
         const val CURRENT_LOCK_MAC = "CURRENT_LOCK_MAC"
+        const val GEOFENCE_RADIUS_IN_METERS = 100f
     }
     private var disconnectDialog: AlertDialog? = null
 

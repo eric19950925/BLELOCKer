@@ -49,10 +49,9 @@ class BleControlViewModel(
     var mLogText = MutableLiveData<String>()
 
 
-    fun bleScan(macAddress: String){
-        if(mBluetoothLeScanner == null)return
-        mBluetoothLeScanner?.startScan(mScanCallback) // 開始搜尋
+    fun bleScan(macAddress: String, keyOne: String){
         bleScanScope = viewModelScope.launch(Dispatchers.Main){
+            mBluetoothLeScanner?.startScan(mScanCallback) // 開始搜尋
             mLockBleStatus.value = BleStatus.CONNECTTING
             try{
                 var timestamp_ = 0
@@ -64,13 +63,14 @@ class BleControlViewModel(
             }finally {
                 updateLogText("Stop ble scan and counting.")
                 pauseScan()
-                //沒有在連gatt，藍芽scan已逾時(30sec)
+                //若沒有進入Gatt連線流程，將Connecting Status設為空值
                 if (mBluetoothGatt == null) {
                     mLockBleStatus.value = null
                 }
             }
         }
         mBleDeviceMacAddress = macAddress
+        mKeyOne = Base64.decode(keyOne, Base64.DEFAULT)
     }
     private val mScanCallback = object: ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult?) {
@@ -123,7 +123,6 @@ class BleControlViewModel(
                     updateLogText("GATT連線出錯: ${status}")
                     CloseBleScanScope()
                     CloseGattScope()
-                    mLockBleStatus.value = BleStatus.UNCONNECT
                     //133通常需要重啟手機藍芽
                     pauseScan()
                 }
@@ -164,7 +163,7 @@ class BleControlViewModel(
 
         override fun onDescriptorWrite(gatt: BluetoothGatt?, descriptor: BluetoothGattDescriptor?, status: Int) {
             updateLogText("\nSetup Notification")
-            viewModelScope.launch { mDescriptorValue.value = true }
+            sendC0()
         }
 
         override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
@@ -257,14 +256,11 @@ class BleControlViewModel(
 
     }
 
-    fun sendC0(init_keyOne: String) {
-        mKeyOne = Base64.decode(init_keyOne, Base64.DEFAULT)
-        viewModelScope.launch {
-            (notify_characteristic?:return@launch).value = mBleCmdRepository.createCommand(0xC0, mKeyOne?:return@launch)
-            updateLogText("\napp writeC0: ${notify_characteristic?.value}")
-            randomNumberOne = mBleCmdRepository.resolveC0(mKeyOne?:return@launch,notify_characteristic?.value?:return@launch)
-            mBluetoothGatt?.writeCharacteristic(notify_characteristic)
-        }
+    fun sendC0() = viewModelScope.launch {
+        (notify_characteristic?:return@launch).value = mBleCmdRepository.createCommand(0xC0, mKeyOne?:return@launch)
+        updateLogText("\napp writeC0: ${notify_characteristic?.value}")
+        randomNumberOne = mBleCmdRepository.resolveC0(mKeyOne?:return@launch,notify_characteristic?.value?:return@launch)
+        mBluetoothGatt?.writeCharacteristic(notify_characteristic)
     }
     fun sendC1(init_permanentToken: String) {
         val permanentToken = Base64.decode(init_permanentToken, Base64.DEFAULT)

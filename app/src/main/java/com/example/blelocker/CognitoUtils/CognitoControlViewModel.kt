@@ -93,7 +93,6 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
     fun confirmUser(userId: String?, code: String?) {
         val cognitoUser = userPool?.getUser(userId)
         cognitoUser?.confirmSignUpInBackground(code, false, confirmationCallback)
-        //cognitoUser.confirmSignUp(code,false, confirmationCallback);
     }
 
     // Callback handler for confirmSignUp API

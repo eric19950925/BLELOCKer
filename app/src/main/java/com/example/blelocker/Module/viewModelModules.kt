@@ -23,6 +23,11 @@ val bluetoothModule = module {
     viewModel { BleControlViewModel(androidContext(),get()) }
 }
 
+
+val geofencingModule = module {
+    viewModel { GeofencingViewModel(androidContext()) }
+}
+
 val databaseModule = module {
 
     //每次開app只在此產生一次實例，直到結束app之前都是使用同一實例 = Singleton pattern

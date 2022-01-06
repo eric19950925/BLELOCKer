@@ -105,4 +105,6 @@ dependencies {
 
     ext.anko_version='0.10.8'
     implementation "org.jetbrains.anko:anko:$anko_version"
+
+    implementation "com.google.android.gms:play-services-location:19.0.0"
 }

@@ -101,7 +101,6 @@
             android:layout_marginStart="5dp"
             android:text="setting"
             />
-
     </LinearLayout>
     <Button
         android:id="@+id/iv_factory"

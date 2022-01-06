@@ -41,7 +41,6 @@ class OneLockFragment: BaseFragment() {
     val bleViewModel by sharedViewModel<BleControlViewModel>()
 
     private lateinit var mSharedPreferences: SharedPreferences
-    private var mBluetoothManager: BluetoothManager? = null
     private var mAdminCode: String? = null
     private var testScope: Job? = null
     private var dialogScope: Job? = null
@@ -78,13 +77,7 @@ class OneLockFragment: BaseFragment() {
         })
 
         dialogScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-            try{
-                var timestamp_ = 0
-                while(timestamp_<1000) {
-                    delay(1000)
-                    timestamp_ += 1
-                }
-            }finally {
+            try{ }finally {
                 disconnectDialog?.dismiss()
             }
         }
@@ -92,10 +85,10 @@ class OneLockFragment: BaseFragment() {
             .setTitle("Disconnect")
             .setCancelable(true)
             .setPositiveButton("reconnect") { _: DialogInterface, _: Int ->
-                oneLockViewModel.mLockConnectionInfo.value?.macAddress?.let {
-                    bleViewModel.bleScan(it)
-                    dialogScope?.cancel()
+                oneLockViewModel.mLockConnectionInfo.value?.let {
+                    bleViewModel.bleScan(it.macAddress, it.keyOne)
                 }
+                dialogScope?.cancel()
             }.create()
 
 
@@ -114,10 +107,10 @@ class OneLockFragment: BaseFragment() {
                     ll_panel.visibility = View.GONE
                     iv_factory.visibility = View.GONE
                     bleViewModel.mLockSetting.value = null
-//show disconnect dialog to help reconnect.
+                    //show disconnect dialog to help reconnect.
                     disconnectDialog?.show()
-
                 }
+
                 BleStatus.CONNECTTING -> {
                     iv_my_lock_ble_status.visibility = View.GONE
                     btn_lock.visibility = View.VISIBLE
@@ -148,11 +141,6 @@ class OneLockFragment: BaseFragment() {
             showLog(it)
         }
 
-        bleViewModel.mDescriptorValue.observe(viewLifecycleOwner){
-            if(hadConn())return@observe
-            if(it)bleViewModel.sendC0(oneLockViewModel.mLockConnectionInfo.value?.keyOne?:return@observe)
-        }
-
         bleViewModel.mCharacteristicValue.observe(viewLifecycleOwner){
             when(it.first){
                 "C0" -> {
@@ -179,6 +167,7 @@ class OneLockFragment: BaseFragment() {
                 }
                 "C7" -> {
                     try {
+                        //update the cloud db by calling api
                         oneLockViewModel.updateLockAdminCode(checkNotNull(mAdminCode))
                     } catch (e:Exception) { Log.d("TAG",e.toString()) }
                 }
@@ -325,10 +314,6 @@ class OneLockFragment: BaseFragment() {
         bleScan()
     }
 
-    private fun hadConn(): Boolean {
-        return bleViewModel.mLockSetting.value != null
-    }
-
     private fun updateUIbySetting() {
         bleViewModel.mLockSetting.value.let {
             if(it == null){
@@ -369,13 +354,14 @@ class OneLockFragment: BaseFragment() {
 //                Log.d("TAG","Block for ${timestamp_} seconds.")
 //            }
 //        }
-        bleViewModel.bleScan(oneLockViewModel.mLockConnectionInfo.value?.macAddress?:return)
+        oneLockViewModel.mLockConnectionInfo.value?.let {
+            bleViewModel.bleScan(it.macAddress, it.keyOne)
+        }
 
     }
 
     override fun onPause() {
         Log.d("TAG","onPause")
-
         super.onPause()
     }
 
@@ -411,38 +397,24 @@ class OneLockFragment: BaseFragment() {
         super.onResume()
         cleanLog()
         //get lock info by macAddress
+        //if use the bundle to get data, can only get data when enter this page from all lock page.
+        //want to get data every time launch this page by resume(ex:wake from sleep), should store data in sp.
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-            delay(100)
             oneLockViewModel.getLockInfo(readCurrentLockMac()?:return@launch)
             if(bleViewModel.mLockBleStatus.value == BleStatus.CONNECT)return@launch
-            bleViewModel.bleScan(readCurrentLockMac()?:return@launch)
+            delay(100)
+            oneLockViewModel.mLockConnectionInfo.value?.let {
+                bleViewModel.bleScan(it.macAddress, it.keyOne)
+            }
         }
-//        arguments?.getString("MAC_ADDRESS").let {
-//            if(it.isNullOrBlank())return
-//            try {
-//                checkNotNull(it)
-//                oneLockViewModel.getLockInfo(it)
-//                //Auto Ble Conn: Only From All Lock Page
-//                //Before auto ble conn, need to clean argument first.
-//                arguments?.remove("MAC_ADDRESS")
-//                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-//                    delay(1000)
-//                    checkToStartBleScan()
-//                }
-//            } catch (e:Exception) { Log.d("TAG",e.toString()) }
-//        }
-
         Log.d("TAG","onResume")
     }
-
-
 
     private fun readCurrentLockMac(): String?{
         mSharedPreferences = requireActivity().getSharedPreferences(DATA, 0)
         return mSharedPreferences.getString(CURRENT_LOCK_MAC, "")
 
     }
-
 
     private fun showLog(logText: String) {
         try {

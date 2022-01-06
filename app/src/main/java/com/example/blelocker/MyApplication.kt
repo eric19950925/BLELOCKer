@@ -22,7 +22,8 @@ class MyApplication: Application() {
                 viewModelModules,
                 bluetoothModule,
                 GithubModule,
-                cognitoModule
+                cognitoModule,
+                geofencingModule
             ))
         }
     }

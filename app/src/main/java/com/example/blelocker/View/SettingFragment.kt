@@ -12,7 +12,6 @@ import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.example.blelocker.Entity.BleStatus
 import com.example.blelocker.Entity.LockConfig
 import com.example.blelocker.Entity.LockSetting
-import com.example.blelocker.MainActivity
 import com.example.blelocker.OneLockViewModel
 import com.example.blelocker.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -124,6 +123,10 @@ class SettingFragment: BaseFragment() {
                 */
             }
         }
+        btn_geofencing.setOnClickListener {
+            //check permission before enter geofencing page
+            Navigation.findNavController(requireView()).navigate(R.id.action_setting_to_autolock)
+        }
 
     }
 
@@ -133,8 +136,8 @@ class SettingFragment: BaseFragment() {
             .setCancelable(false)
             .setPositiveButton("reconnect") { dialog: DialogInterface, _: Int ->
                 dialog.dismiss()
-                oneLockViewModel.mLockConnectionInfo.value?.macAddress?.let {
-                    bleViewModel.bleScan(it)
+                oneLockViewModel.mLockConnectionInfo.value?.let {
+                    bleViewModel.bleScan(it.macAddress, it.keyOne)
                 }
             }.show()
     }

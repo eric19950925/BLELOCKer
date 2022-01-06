@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="?attr/colorPrimary"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/my_toolbar"
         android:layout_width="match_parent"
@@ -12,19 +10,6 @@
         android:background="?attr/colorSecondary"
         app:titleTextColor="?attr/colorOnSecondary"
         app:layout_constraintTop_toTopOf="parent" />
-    <TextView
-        android:id="@+id/log_tv"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:scrollbars="horizontal"
-        style="@style/styleText.log"
-        android:textColor="?attr/colorOnSurface"
-        android:background="?attr/colorSurface"
-        android:textSize="14dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ll_my_lock" />
-
     <LinearLayout
         android:id="@+id/ll_my_lock"
         android:layout_width="match_parent"
@@ -33,7 +18,6 @@
         android:layout_marginBottom="2dp"
         android:background="?attr/colorOnSecondary"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/log_tv"
         app:layout_constraintTop_toBottomOf="@+id/my_toolbar">
         <LinearLayout
             android:id="@+id/ll_lock_data"
@@ -45,7 +29,7 @@
             android:layout_margin="10dp"
             >
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/switch_auto_lock"
+                android:id="@+id/switch_geofence"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
             <Button
@@ -53,9 +37,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="5dp"
+                android:visibility="gone"
                 android:text="geofencing"
                 />
         </LinearLayout>
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

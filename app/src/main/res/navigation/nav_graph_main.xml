@@ -11,6 +11,14 @@
         app:destination="@id/one_lock_Fragment"
         android:id="@+id/global_pop_inclusive_to_onelock"/>
     <fragment
+        android:id="@+id/autoUnlock_Fragment"
+        android:name="com.example.blelocker.View.AutoUnLockFragment"
+        tools:layout="@layout/fragment_auto_unlock">
+        <action
+            android:id="@+id/back_to_setting"
+            app:destination="@id/setting_Fragment" />
+    </fragment>
+    <fragment
         android:id="@+id/login_Fragment"
         android:name="com.example.blelocker.View.LoginFragment"
         tools:layout="@layout/fragment_login">
@@ -48,6 +56,9 @@
         <action
             android:id="@+id/action_back_to_onelock"
             app:destination="@id/one_lock_Fragment" />
+        <action
+            android:id="@+id/action_setting_to_autolock"
+            app:destination="@id/autoUnlock_Fragment" />
     </fragment>
     <fragment
         android:id="@+id/scan_Fragment"
