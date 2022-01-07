@@ -136,9 +136,7 @@ class SettingFragment: BaseFragment() {
             .setCancelable(false)
             .setPositiveButton("reconnect") { dialog: DialogInterface, _: Int ->
                 dialog.dismiss()
-                oneLockViewModel.mLockConnectionInfo.value?.let {
-                    bleViewModel.bleScan(it.macAddress, it.keyOne)
-                }
+                Navigation.findNavController(requireView()).navigate(R.id.action_back_to_onelock)
             }.show()
     }
 

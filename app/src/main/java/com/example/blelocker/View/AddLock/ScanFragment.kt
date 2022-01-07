@@ -16,6 +16,7 @@ import kotlin.random.Random
 import com.google.gson.JsonParser
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import android.os.Bundle
+import com.google.gson.JsonObject
 
 class ScanFragment: BaseFragment() {
     override fun getLayoutRes(): Int = R.layout.fragment_scan
@@ -34,10 +35,14 @@ class ScanFragment: BaseFragment() {
 //                    cleanLog()
                     mQRcode = result.contents
                     //處理QRcode
+//                    {"T":"85AAF10630C3D1F6","K":"BB47D0D61173F7A39215C3F29816ED53","A":"ERICSHIH_TESTLOCK","M":"GNE1AJ"}
+//                    oneLockViewModel.insertNewLock(LockConnectionInfo(mQRcode?:""))
+//                    Navigation.findNavController(requireView()).navigate(R.id.action_back_to_alllocks)
+//                    return@registerForActivityResult
                     decryptQRcode(result.contents) {
-                        val bundle = Bundle()
-                        bundle.putString("MAC_ADDRESS", it)
-                        Navigation.findNavController(requireView()).navigate(R.id.action_back_to_alllocks,bundle)
+//                        val bundle = Bundle()
+//                        bundle.putString("MAC_ADDRESS", it)
+                        Navigation.findNavController(requireView()).navigate(R.id.action_back_to_alllocks)
                     }
 
                 }
@@ -58,6 +63,9 @@ class ScanFragment: BaseFragment() {
         )
         decrypted?.let { result ->
             val data = String(result).replace(Regex("\\P{Print}"), "")
+
+            //check if had bind todo
+
             requireActivity().runOnUiThread {
                 //store data
                 oneLockViewModel.mLockConnectionInfo.value = LockConnectionInfo(data)
@@ -98,6 +106,7 @@ class ScanFragment: BaseFragment() {
     fun LockConnectionInfo(jsonString: String): LockConnectionInformation {
         if (parser.parse(jsonString).isJsonObject) {
             val root = parser.parse(jsonString)
+            Log.d("TAG","root= "+root.toString())
             val oneTimeToken = root.asJsonObject?.get("T")?.asString
                 ?: throw IllegalArgumentException("Invalid Token")
             val keyOne = root.asJsonObject?.get("K")?.asString
