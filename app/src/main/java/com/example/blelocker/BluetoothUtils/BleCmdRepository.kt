@@ -4,7 +4,7 @@ import android.util.Base64
 import android.util.Log
 import com.example.blelocker.MainActivity
 import com.example.blelocker.Entity.*
-import com.example.blelocker.View.LockStatusException
+import com.example.blelocker.Exception.LockStatusException
 import com.example.blelocker.toHex
 import com.example.blelocker.unSignedInt
 import java.math.BigDecimal

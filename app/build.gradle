@@ -94,7 +94,7 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.6.0'
 
     // Amplify core dependency
-    implementation 'com.amplifyframework:core:1.31.0'
+    implementation 'com.amplifyframework:core:1.31.1'
 
     // Support for Java 8 features
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
@@ -107,4 +107,8 @@ dependencies {
     implementation "org.jetbrains.anko:anko:$anko_version"
 
     implementation "com.google.android.gms:play-services-location:19.0.1"
+
+    implementation "io.reactivex.rxjava2:rxjava:2.2.21"
+    implementation "com.polidea.rxandroidble2:rxandroidble:1.13.1"
+    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'//AndroidSchedulers.mainThread()
 }

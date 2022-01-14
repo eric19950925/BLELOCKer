@@ -1,4 +1,4 @@
-package com.example.blelocker.View
+package com.example.blelocker.View.Settings.AutoUnLock
 
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
@@ -8,15 +8,18 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.navigation.Navigation
 import com.example.blelocker.*
+import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.google.android.gms.common.api.ApiException
 import kotlinx.android.synthetic.main.fragment_auto_unlock.*
+import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class AutoUnLockFragment: BaseFragment(){
     override fun getLayoutRes(): Int = R.layout.fragment_auto_unlock
     private lateinit var mSharedPreferences: SharedPreferences
-    val geofenceViewModel by viewModel<GeofencingViewModel>()
-    @RequiresApi(Build.VERSION_CODES.O)
+    private val geofenceViewModel by viewModel<GeofencingViewModel>()
+    private val bleViewModel by sharedViewModel<BleControlViewModel>()
+    @RequiresApi(Build.VERSION_CODES.S)
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewHasCreated() {
 
@@ -74,7 +77,7 @@ class AutoUnLockFragment: BaseFragment(){
     }
 
     override fun onBackPressed() {
-        Navigation.findNavController(requireView()).navigate(R.id.back_to_setting)
+        Navigation.findNavController(requireView()).navigate(R.id.back_to_home)
     }
     private fun readGeoSP(): Boolean{
         mSharedPreferences = requireActivity().getSharedPreferences(MainActivity.DATA, 0)

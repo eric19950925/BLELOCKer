@@ -1,4 +1,4 @@
-package com.example.blelocker
+package com.example.blelocker.View.Settings.AutoUnLock
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -11,20 +11,12 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import com.example.blelocker.R
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofenceStatusCodes
 import com.google.android.gms.location.GeofencingEvent
 
 class GeofenceBroadcastReceiver: BroadcastReceiver(){
-    companion object {
-        const val AUTO_UNLOCK_CHANNEL_ID = "auto_unlock_channel_id"
-
-        /**
-         * The identifier for the notification displayed for geofence service.
-         */
-        const val AUTO_UNLOCK_NOTIFICATION_ID = 6212021
-    }
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onReceive(context: Context?, intent: Intent?) {
         val geofencingEvent = GeofencingEvent.fromIntent(intent?:return)
         if (geofencingEvent.hasError()) {
@@ -38,9 +30,7 @@ class GeofenceBroadcastReceiver: BroadcastReceiver(){
         val geofenceTransition = geofencingEvent.geofenceTransition
 
         // Test that the reported transition was of interest.
-        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
-        geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
-
+        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER){
             // Get the geofences that were triggered. A single event can trigger
             // multiple geofences.
             val triggeringGeofences = geofencingEvent.triggeringGeofences
@@ -53,11 +43,26 @@ class GeofenceBroadcastReceiver: BroadcastReceiver(){
             )
 
             // Send notification and log the transition details.
-            sendNotification(context, geofenceTransitionDetails)
+//            sendNotification(context, geofenceTransitionDetails)
+            //start ble scan
+            val serviceIntent = Intent(context, AutoUnlockService::class.java)
+            context.startService(serviceIntent)
+            Log.i("TAG", geofenceTransitionDetails)
+
+        }else if(geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
+            val triggeringGeofences = geofencingEvent.triggeringGeofences
+            val geofenceTransitionDetails = getGeofenceTransitionDetails(
+                context?:return,
+                geofenceTransition,
+                triggeringGeofences
+            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                sendNotification(context, geofenceTransitionDetails)
+            }
             Log.i("TAG", geofenceTransitionDetails)
         } else {
-            // Log the error.
-            Log.e("TAG", "error")
+            // Log the strange error.//todo
+            Log.e("TAG", GeofenceStatusCodes.getStatusCodeString(geofencingEvent.errorCode))
         }
 
     }
@@ -104,9 +109,11 @@ class GeofenceBroadcastReceiver: BroadcastReceiver(){
             "Day15"
         )
         builder.setSmallIcon(R.drawable.ic_lock_main)
-            .setContentTitle("觸發auto unlock")
-            .setContentText("門已解鎖~歡迎回家!!")
-            .setLargeIcon(BitmapFactory.decodeResource(Resources.getSystem(),R.drawable.ic_auto_unlock))
+            .setContentTitle("BTLocker - Auto Unlock")
+            .setContentText(notificationDetails)
+            .setLargeIcon(BitmapFactory.decodeResource(Resources.getSystem(),
+                R.drawable.ic_auto_unlock
+            ))
             .setAutoCancel(true)
         val notification : Notification = builder.build()
         val manager = (context.getSystemService(Context.NOTIFICATION_SERVICE)) as NotificationManager

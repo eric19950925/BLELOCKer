@@ -1,6 +1,5 @@
-package com.example.blelocker.View
+package com.example.blelocker.View.SignIn
 
-import android.view.View
 import androidx.navigation.Navigation
 import com.example.blelocker.BaseFragment
 import com.example.blelocker.CognitoUtils.CognitoControlViewModel

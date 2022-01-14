@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
         android:name=".MyApplication"
@@ -36,10 +37,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <receiver android:name=".GeofenceBroadcastReceiver"
+        <receiver android:name=".View.Settings.AutoUnLock.GeofenceBroadcastReceiver"
             android:enabled="true"
             android:exported="true"
             tools:ignore="ExportedReceiver" />
+        <service
+            android:name=".View.Settings.AutoUnLock.AutoUnlockService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
     </application>
 
 </manifest>

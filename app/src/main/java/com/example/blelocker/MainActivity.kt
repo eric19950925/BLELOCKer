@@ -1,6 +1,8 @@
 package com.example.blelocker
 
+import android.app.PendingIntent
 import android.content.DialogInterface
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
@@ -20,6 +22,11 @@ class MainActivity : AppCompatActivity() {
         const val DATA = "DATA"
         const val CURRENT_LOCK_MAC = "CURRENT_LOCK_MAC"
         const val GEOFENCE_RADIUS_IN_METERS = 100f
+        var MY_PENDING_INTENT_FLAG = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
     }
     private var disconnectDialog: AlertDialog? = null
 

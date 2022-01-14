@@ -16,6 +16,7 @@ import androidx.navigation.Navigation
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.blelocker.BaseFragment
+import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.example.blelocker.CognitoUtils.CognitoControlViewModel
 import com.example.blelocker.CognitoUtils.LogOutRequest.*
 import com.example.blelocker.MainActivity
@@ -31,6 +32,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class AllLocksFragment : BaseFragment(){
     val oneLockViewModel by viewModel<OneLockViewModel>()
     val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
+    val bleViewModel by sharedViewModel<BleControlViewModel>()
     private lateinit var mSharedPreferences: SharedPreferences
     var count = 0
     override fun getLayoutRes(): Int = R.layout.fragment_all_locks
@@ -102,7 +104,12 @@ class AllLocksFragment : BaseFragment(){
             }
         }
         btn_logout.setOnClickListener {
-            logOut()
+//            logOut()
+            bleViewModel.rxBleConnectAndSendC0("58:8E:81:A5:61:74")
+        }
+
+        btn_autoUnlock.setOnClickListener {
+            Navigation.findNavController(requireView()).navigate(R.id.action_alllocks_to_autolock)
         }
     }
 

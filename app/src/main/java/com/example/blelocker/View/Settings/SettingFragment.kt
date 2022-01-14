@@ -1,4 +1,4 @@
-package com.example.blelocker.View
+package com.example.blelocker.View.Settings
 
 import android.annotation.SuppressLint
 import android.content.DialogInterface

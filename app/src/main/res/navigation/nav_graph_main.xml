@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph_main"
-    app:startDestination="@id/login_Fragment">
+    app:startDestination="@id/all_locks_Fragment">
 
     <action
         app:popUpToInclusive="true"
@@ -12,15 +12,18 @@
         android:id="@+id/global_pop_inclusive_to_onelock"/>
     <fragment
         android:id="@+id/autoUnlock_Fragment"
-        android:name="com.example.blelocker.View.AutoUnLockFragment"
+        android:name="com.example.blelocker.View.Settings.AutoUnLock.AutoUnLockFragment"
         tools:layout="@layout/fragment_auto_unlock">
         <action
             android:id="@+id/back_to_setting"
             app:destination="@id/setting_Fragment" />
+        <action
+            android:id="@+id/back_to_home"
+            app:destination="@id/all_locks_Fragment" />
     </fragment>
     <fragment
         android:id="@+id/login_Fragment"
-        android:name="com.example.blelocker.View.LoginFragment"
+        android:name="com.example.blelocker.View.SignIn.LoginFragment"
         tools:layout="@layout/fragment_login">
         <action
             android:id="@+id/action_login_to_signup"
@@ -31,7 +34,7 @@
     </fragment>
     <fragment
         android:id="@+id/signup_Fragment"
-        android:name="com.example.blelocker.View.SignUpFragment"
+        android:name="com.example.blelocker.View.SignIn.SignUpFragment"
         tools:layout="@layout/fragment_signup">
         <action
             android:id="@+id/action_back_to_login"
@@ -51,7 +54,7 @@
     </fragment>
     <fragment
         android:id="@+id/setting_Fragment"
-        android:name="com.example.blelocker.View.SettingFragment"
+        android:name="com.example.blelocker.View.Settings.SettingFragment"
         tools:layout="@layout/fragment_setting">
         <action
             android:id="@+id/action_back_to_onelock"
@@ -106,6 +109,9 @@
         <action
             android:id="@+id/action_to_login"
             app:destination="@id/login_Fragment" />
+        <action
+            android:id="@+id/action_alllocks_to_autolock"
+            app:destination="@id/autoUnlock_Fragment" />
     </fragment>
 
 </navigation>

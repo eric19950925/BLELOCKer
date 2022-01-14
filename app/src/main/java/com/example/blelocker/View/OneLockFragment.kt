@@ -85,6 +85,7 @@ class OneLockFragment: BaseFragment() {
             .setTitle("Disconnect")
             .setCancelable(true)
             .setPositiveButton("reconnect") { _: DialogInterface, _: Int ->
+                bleViewModel.CloseGattScope()
                 oneLockViewModel.mLockConnectionInfo.value?.let {
                     bleViewModel.bleScan(it.macAddress, it.keyOne)
                 }

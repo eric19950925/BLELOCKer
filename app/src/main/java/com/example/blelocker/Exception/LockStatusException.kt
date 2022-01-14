@@ -1,4 +1,4 @@
-package com.example.blelocker.View
+package com.example.blelocker.Exception
 
 sealed class LockStatusException : Throwable() {
     class LockStatusNotRespondingException : LockStatusException()

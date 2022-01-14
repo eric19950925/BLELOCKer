@@ -1,15 +1,17 @@
-package com.example.blelocker
+package com.example.blelocker.View.Settings.AutoUnLock
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
-import com.example.blelocker.MainActivity.Companion.GEOFENCE_RADIUS_IN_METERS
+import com.example.blelocker.MainActivity
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
@@ -21,7 +23,8 @@ class GeofencingViewModel(val context: Context): ViewModel() {
     init {
 //        geofencingClient = LocationServices.getGeofencingClient(context)
     }
-    @SuppressLint("MissingPermission")
+    @RequiresApi(Build.VERSION_CODES.S)
+    @SuppressLint("MissingPermission", "UnspecifiedImmutableFlag")
     fun setGeofencing(success: () -> Unit,
                             failure: (error: Exception) -> Unit){
         val geofence = Geofence.Builder()
@@ -32,7 +35,7 @@ class GeofencingViewModel(val context: Context): ViewModel() {
             // Set the circular region of this geofence.
             .setCircularRegion(
                 25.056475621863527, 121.47266461696209,
-                GEOFENCE_RADIUS_IN_METERS
+                MainActivity.GEOFENCE_RADIUS_IN_METERS
             )
 
             // Set the expiration duration of the geofence. This geofence gets automatically
@@ -50,7 +53,7 @@ class GeofencingViewModel(val context: Context): ViewModel() {
             context,
             0,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+            MainActivity.MY_PENDING_INTENT_FLAG
         )
         val geofencingClient = LocationServices.getGeofencingClient(context)
         if (geofence != null && ContextCompat.checkSelfPermission(context, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {

@@ -4,14 +4,18 @@ import android.app.Application
 import androidx.room.Room
 import com.example.blelocker.BluetoothUtils.BleCmdRepository
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
+import com.example.blelocker.BluetoothUtils.BleScanUseCase
 import com.example.blelocker.CognitoUtils.CognitoControlViewModel
 import com.example.blelocker.Model.LockConnInfoDAO
 import com.example.blelocker.Model.LockConnInfoDatabase
 import com.example.blelocker.Model.LockConnInfoRepository
+import com.example.blelocker.View.Settings.AutoUnLock.AutoUnlockService
+import com.example.blelocker.View.Settings.AutoUnLock.GeofencingViewModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
+import com.polidea.rxandroidble2.RxBleClient
 
 val cognitoModule = module {
 //    single { BleCmdRepository() }
@@ -20,12 +24,14 @@ val cognitoModule = module {
 
 val bluetoothModule = module {
     single { BleCmdRepository() }
-    viewModel { BleControlViewModel(androidContext(),get()) }
+    single { BleScanUseCase(RxBleClient.create(androidContext())) }
+    viewModel { BleControlViewModel(androidContext(),get(),get()) }
 }
 
 
 val geofencingModule = module {
     viewModel { GeofencingViewModel(androidContext()) }
+    single { AutoUnlockService() }
 }
 
 val databaseModule = module {

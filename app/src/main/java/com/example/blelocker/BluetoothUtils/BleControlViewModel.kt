@@ -16,17 +16,23 @@ import com.example.blelocker.Entity.LockSetting
 import com.example.blelocker.MainActivity
 import com.example.blelocker.toHex
 import com.example.blelocker.unSignedInt
+import io.reactivex.Observable
 import kotlinx.android.synthetic.main.fragment_onelock.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
+import org.koin.core.KoinComponent
+import org.koin.core.inject
+import java.util.concurrent.TimeUnit
 
 class BleControlViewModel(
     @SuppressLint("StaticFieldLeak") val context: Context,
-    private val mBleCmdRepository: BleCmdRepository
-    ): ViewModel() {
+    private val mBleCmdRepository: BleCmdRepository,
+    private val bleScanUseCase: BleScanUseCase
+    ): ViewModel(), KoinComponent {
+    private val statefulConnection: StatefulConnection by inject()
     private var mBluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private var mBluetoothLeScanner = mBluetoothManager.adapter.bluetoothLeScanner
     private var mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
@@ -42,12 +48,36 @@ class BleControlViewModel(
     private var notify_characteristic: BluetoothGattCharacteristic? = null
 
     var mCharacteristicValue = MutableLiveData<Pair<String, Any>>()
-    var mDescriptorValue = MutableLiveData<Boolean>()
     val mLockBleStatus = MutableLiveData<Int?>()
     var mLockSetting = MutableLiveData<LockSetting>()
     var mGattStatus = MutableLiveData<Boolean>()
     var mLogText = MutableLiveData<String>()
 
+    fun rxBleConnectAndSendC0(macAddress: String){
+        //get connect
+        val connection = Observable.timer(500, TimeUnit.MILLISECONDS)
+            .flatMap { bleScanUseCase.device(macAddress).establishConnection(false) }
+//            .takeUntil(
+                //gatt連線中斷處理
+//                disconnectTriggerSubject.doOnNext { isDisconnected ->
+//                    unless(isDisconnected) {
+//                        _connectionState.postValue(Event.success(Pair(false, "")))
+//                    }
+//                }
+//            )
+        //設定mtu的東西
+//            .flatMap { connection ->
+//                Log.d("TAG","connected to device and request mtu :${connection.mtu}")
+//                connection
+//                    .requestMtu(RxBleConnection.GATT_MTU_MAXIMUM)
+//                    .ignoreElement()
+//                    .doOnError { error -> Log.e("TAG",error.cause.toString()) }
+//                    .andThen(Observable.just(connection))
+//            }
+        //sendC0
+
+
+    }
 
     fun bleScan(macAddress: String, keyOne: String){
         bleScanScope = viewModelScope.launch(Dispatchers.Main){

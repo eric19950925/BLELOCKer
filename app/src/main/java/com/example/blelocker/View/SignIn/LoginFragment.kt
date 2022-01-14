@@ -1,4 +1,4 @@
-package com.example.blelocker.View
+package com.example.blelocker.View.SignIn
 
 import android.content.DialogInterface
 import android.widget.EditText
