@@ -4,12 +4,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph_main"
     app:startDestination="@id/all_locks_Fragment">
+    <include app:graph="@navigation/add_lock_graph" />
 
     <action
         app:popUpToInclusive="true"
         app:popUpTo="@id/one_lock_Fragment"
         app:destination="@id/one_lock_Fragment"
         android:id="@+id/global_pop_inclusive_to_onelock"/>
+    <action
+        app:popUpToInclusive="true"
+        app:popUpTo="@id/all_locks_Fragment"
+        app:destination="@id/all_locks_Fragment"
+        android:id="@+id/global_pop_inclusive_to_alllock"/>
     <fragment
         android:id="@+id/autoUnlock_Fragment"
         android:name="com.example.blelocker.View.Settings.AutoUnLock.AutoUnLockFragment"
@@ -63,14 +69,6 @@
             android:id="@+id/action_setting_to_autolock"
             app:destination="@id/autoUnlock_Fragment" />
     </fragment>
-    <fragment
-        android:id="@+id/scan_Fragment"
-        android:name="com.example.blelocker.View.AddLock.ScanFragment"
-        tools:layout="@layout/fragment_scan">
-        <action
-            android:id="@+id/action_back_to_alllocks"
-            app:destination="@id/all_locks_Fragment" />
-    </fragment>
 
     <fragment
         android:id="@+id/github_Fragment"
@@ -99,7 +97,7 @@
         tools:layout="@layout/fragment_all_locks">
         <action
             android:id="@+id/action_alllocks_to_scan"
-            app:destination="@id/scan_Fragment" />
+            app:destination="@id/add_lock_graph" />
         <action
             android:id="@+id/action_alllocks_to_github"
             app:destination="@id/github_Fragment" />

@@ -257,6 +257,9 @@ class OneLockFragment: BaseFragment() {
         btn_setting.setOnClickListener {
             Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_setting)
         }
+//        btn_admin_code.setOnClickListener {
+//            launchAdminCodeDialog(AdminCodeDialog.INSERT)
+//        }
 
     }
 
@@ -276,10 +279,13 @@ class OneLockFragment: BaseFragment() {
                         mAdminCode = editText.text.toString()
                     }
                     AdminCodeDialog.UPDATE ->{
-
+                        bleViewModel.sendC8(editText.text.toString())
+                        mAdminCode = editText.text.toString()
                     }
                     AdminCodeDialog.FACTORY_RESET ->{
-                        if(editText.text.toString() == oneLockViewModel.mLockConnectionInfo.value?.adminCode) bleViewModel.sendCE()
+                        if(editText.text.toString() == oneLockViewModel.mLockConnectionInfo.value?.adminCode) {
+                            bleViewModel.sendCE(editText.text.toString())
+                        }
                         else launchErrorDialog()
                     }
                 }
@@ -294,12 +300,14 @@ class OneLockFragment: BaseFragment() {
     }
 
     private fun launchErrorDialog() {
+        val code = oneLockViewModel.mLockConnectionInfo.value?.adminCode
         MaterialAlertDialogBuilder(
             requireActivity(),
             R.style.ThemeOverlay_App_MaterialAlertDialog
         )
             .setCancelable(false)
             .setTitle("Error")
+//            .setMessage("admin code is $code")
             .setPositiveButton("confirm") { _: DialogInterface, _: Int ->
 
             }

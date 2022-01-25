@@ -273,9 +273,9 @@ class AutoUnlockService: Service() {
             when(decrypted?.component3()?.unSignedInt()){
                 0xC0 -> {
 //                    Log.d("TAG","C0 notify ramNum2")
-                    mBleCmdRepository.generateKeyTwo(randomNumberOne?:return, mBleCmdRepository.resolveC0(mKeyOne?:return, characteristic.value)){
+                    mBleCmdRepository.generateKeyTwoThen(randomNumberOne?:return, mBleCmdRepository.resolveC0(mKeyOne?:return, characteristic.value)){
                         mKeyTwo = it
-                        sendC1(mLockData?.permanentToken?:return@generateKeyTwo)
+                        sendC1(mLockData?.permanentToken?:return@generateKeyTwoThen)
                     }
 
                 }

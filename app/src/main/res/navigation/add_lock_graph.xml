@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/add_lock_graph"
+    app:startDestination="@id/permissionRequestFragment">
+
+    <fragment
+        android:id="@+id/scanFragment"
+        android:name="com.example.blelocker.View.AddLock.ScanFragment"
+        tools:layout="@layout/fragment_scan"
+        android:label="ScanFragment" >
+        <action
+            android:id="@+id/action_scanFragment_to_installationFragment"
+            app:destination="@id/installationFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/installationFragment"
+        android:name="com.example.blelocker.View.AddLock.InstallationFragment"
+        android:label="InstallationFragment"
+        tools:layout="@layout/fragment_installation">
+        <action
+            android:id="@+id/action_installationFragment_to_connectFragment"
+            app:destination="@id/connectFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/connectFragment"
+        android:name="com.example.blelocker.View.AddLock.ConnectFragment"
+        android:label="ConnectFragment"
+        tools:layout="@layout/fragment_connect">
+        <action
+            android:id="@+id/action_connectFragment_to_selectWifiFragment"
+            app:destination="@id/selectWifiFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/selectWifiFragment"
+        android:name="com.example.blelocker.View.AddLock.SelectWifiFragment"
+        android:label="SelectWifiFragment"
+        tools:layout="@layout/fragment_select_wifi">
+        <action
+            android:id="@+id/action_selectWifiFragment_to_enterWifiPWFragment"
+            app:destination="@id/enterWifiPWFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/enterWifiPWFragment"
+        android:name="com.example.blelocker.View.AddLock.EnterWifiPWFragment"
+        android:label="EnterWifiPWFragment"
+        tools:layout="@layout/fragment_enter_wifi_password">
+
+        <action
+            android:id="@+id/action_enterWifiPWFragment_to_addAdminCodeFragment"
+            app:destination="@id/addAdminCodeFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/locationIntroFragment"
+        android:name="com.example.blelocker.View.AddLock.LocationIntroFragment"
+        android:label="LocationIntroFragment"
+        tools:layout="@layout/fragment_location_intro">
+        <action
+            android:id="@+id/action_locationIntroFragment_to_locationSummaryFragment"
+            app:destination="@id/locationSummaryFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/permissionRequestFragment"
+        android:name="com.example.blelocker.View.AddLock.PermissionRequestFragment"
+        android:label="PermissionRequestFragment"
+        tools:layout="@layout/fragment_permission_request">
+        <action
+            android:id="@+id/action_permissionRequestFragment_to_scanFragment"
+            app:destination="@id/scanFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/locationSummaryFragment"
+        android:name="com.example.blelocker.View.AddLock.LocationSummaryFragment"
+        android:label="LocationSummaryFragment"
+        tools:layout="@layout/fragment_location_summary"/>
+    <fragment
+        android:id="@+id/addAdminCodeFragment"
+        android:name="com.example.blelocker.View.AddLock.AddAdminCodeFragment"
+        android:label="AddAdminCodeFragment"
+        tools:layout="@layout/fragment_add_admin_code">
+        <action
+            android:id="@+id/action_addAdminCodeFragment_to_locationIntroFragment"
+            app:destination="@id/locationIntroFragment" />
+    </fragment>
+</navigation>

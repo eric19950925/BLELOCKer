@@ -9,6 +9,8 @@ import com.example.blelocker.CognitoUtils.CognitoControlViewModel
 import com.example.blelocker.Model.LockConnInfoDAO
 import com.example.blelocker.Model.LockConnInfoDatabase
 import com.example.blelocker.Model.LockConnInfoRepository
+import com.example.blelocker.View.AddLock.AddAdminCodeViewModel
+import com.example.blelocker.View.AddLock.AdminCodeUseCase
 import com.example.blelocker.View.Settings.AutoUnLock.AutoUnlockService
 import com.example.blelocker.View.Settings.AutoUnLock.GeofencingViewModel
 import org.koin.android.ext.koin.androidApplication
@@ -24,7 +26,7 @@ val cognitoModule = module {
 
 val bluetoothModule = module {
     single { BleCmdRepository() }
-    single { BleScanUseCase(RxBleClient.create(androidContext())) }
+    single { BleScanUseCase(RxBleClient.create(androidContext()),get()) }
     viewModel { BleControlViewModel(androidContext(),get(),get()) }
 }
 
@@ -66,5 +68,7 @@ val viewModelModules = module {
     // ViewModel for One Lock View
 
     viewModel { OneLockViewModel(get()) }
+    single { AdminCodeUseCase(get()) }
+    viewModel { AddAdminCodeViewModel(get(),get()) }
 
 }

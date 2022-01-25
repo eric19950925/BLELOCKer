@@ -1,5 +1,9 @@
 package com.example.blelocker
 
+import android.view.ViewGroup
+import androidx.annotation.LayoutRes
+import androidx.recyclerview.widget.RecyclerView
+import com.example.blelocker.View.inflate
 import java.util.*
 
 
@@ -19,3 +23,21 @@ fun hexToBytes(hexString: String): ByteArray? {
     }
     return rawData
 }
+
+inline fun <T : Any> createSimpleAdapter(
+    itemList: List<T>,
+    @LayoutRes layout: Int,
+    crossinline bindViewHolder:
+        (item: T, viewHolder: RecyclerView.ViewHolder, position: Int) -> Unit
+) =
+    object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            return object : RecyclerView.ViewHolder(parent.inflate(layout)) {}
+        }
+
+        override fun getItemCount(): Int = itemList.count()
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            bindViewHolder(itemList[position], holder, position)
+        }
+    }

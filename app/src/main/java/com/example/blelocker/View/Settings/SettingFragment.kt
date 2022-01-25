@@ -62,12 +62,16 @@ class SettingFragment: BaseFragment() {
                         isSoundOn = it.isSoundOn,
                         isVacationModeOn = it.isVacationModeOn,
                         isAutoLock = !switch_auto_lock.isChecked,
-                        autoLockTime = it.autoLockTime
+                        autoLockTime = it.autoLockTime,
+                        isPreamble = it.isPreamble
                     )
                     bleViewModel.setAutoLock(new_setting)
                 }
             }
             false
+        }
+        btn_orientation.setOnClickListener {
+            bleViewModel.checkOrientation()
         }
 
         bleViewModel.mCharacteristicValue.observe(viewLifecycleOwner){

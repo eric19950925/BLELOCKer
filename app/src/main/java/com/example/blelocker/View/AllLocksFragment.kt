@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Bundle
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
@@ -68,21 +67,6 @@ class AllLocksFragment : BaseFragment(){
             when(it.itemId){
                 R.id.scan -> {
                     Navigation.findNavController(requireView()).navigate(R.id.action_alllocks_to_scan)
-//                    var sample_lock = LockConnectionInformation(
-//                        macAddress = "it.macAddress${count}",
-//                        displayName = "it.displayName",
-//                        keyOne = "it.keyOne",
-//                        keyTwo = "it.keyTwo",
-//                        oneTimeToken = "it.oneTimeToken",
-//                        permanentToken = "it.permanentToken",
-//                        isOwnerToken = true,
-//                        tokenName = "T",
-//                        sharedFrom = "it.sharedFrom",
-//                        index = 0,
-//                        adminCode = "0000"
-//                    )
-//                    oneLockViewModel.insertLock(sample_lock)
-//                    count++
                     true
                 }
                 R.id.github -> {
@@ -105,7 +89,6 @@ class AllLocksFragment : BaseFragment(){
         }
         btn_logout.setOnClickListener {
 //            logOut()
-            bleViewModel.rxBleConnectAndSendC0("58:8E:81:A5:61:74")
         }
 
         btn_autoUnlock.setOnClickListener {

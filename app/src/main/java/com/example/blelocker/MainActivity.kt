@@ -17,8 +17,8 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val CIPHER_MODE = "AES/ECB/NoPadding"
         const val BARCODE_KEY = "SoftChefSunion65"
-        val NOTIFICATION_CHARACTERISTIC = UUID.fromString("de915dce-3539-61ea-ade7-d44a2237601f")
-        val SUNION_SERVICE_UUID = UUID.fromString("fc3d8cf8-4ddc-7ade-1dd9-2497851131d7")
+        val NOTIFICATION_CHARACTERISTIC: UUID = UUID.fromString("de915dce-3539-61ea-ade7-d44a2237601f")
+        val SUNION_SERVICE_UUID: UUID = UUID.fromString("fc3d8cf8-4ddc-7ade-1dd9-2497851131d7")
         const val DATA = "DATA"
         const val CURRENT_LOCK_MAC = "CURRENT_LOCK_MAC"
         const val GEOFENCE_RADIUS_IN_METERS = 100f
@@ -69,6 +69,13 @@ class MainActivity : AppCompatActivity() {
                 }
                 else -> nav.navigate(R.id.global_pop_inclusive_to_onelock)
             }
+        }
+    }
+
+    fun backToHome() {
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment
+        navHostFragment.navController.let { nav ->
+            nav.navigate(R.id.global_pop_inclusive_to_alllock)
         }
     }
 

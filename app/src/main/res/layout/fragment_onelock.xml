@@ -101,6 +101,14 @@
             android:layout_marginStart="5dp"
             android:text="setting"
             />
+        <Button
+            android:id="@+id/btn_admin_code"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:visibility="gone"
+            android:text="admin code"
+            />
     </LinearLayout>
     <Button
         android:id="@+id/iv_factory"

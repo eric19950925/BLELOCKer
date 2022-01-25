@@ -1,11 +1,9 @@
 package com.example.blelocker.View.AddLock
 
-import android.app.Activity
 import android.content.Intent
 import android.util.Base64
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.navigation.Navigation
 import com.example.blelocker.*
 import com.example.blelocker.Entity.LockConnectionInformation
@@ -15,40 +13,64 @@ import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 import com.google.gson.JsonParser
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import android.os.Bundle
-import com.google.gson.JsonObject
+import com.google.zxing.ResultPoint
+import com.journeyapps.barcodescanner.BarcodeCallback
+import com.journeyapps.barcodescanner.BarcodeResult
+import com.journeyapps.barcodescanner.camera.CameraSettings
+import io.reactivex.disposables.Disposable
+import io.reactivex.subjects.PublishSubject
+import kotlinx.android.synthetic.main.fragment_scan.*
+import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 class ScanFragment: BaseFragment() {
     override fun getLayoutRes(): Int = R.layout.fragment_scan
-    val oneLockViewModel by viewModel<OneLockViewModel>()
+    val oneLockViewModel by sharedViewModel<OneLockViewModel>()
     private lateinit var mQrResultLauncher : ActivityResultLauncher<Intent>
     var mQRcode: String?=null
     private val parser = JsonParser()
-    override fun onViewHasCreated() {
+    var scanDisposable: Disposable? = null
 
-        mQrResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if(it.resultCode == Activity.RESULT_OK) {
-                val result = IntentIntegrator.parseActivityResult(it.resultCode, it.data)
+    var scanResultDisposable: Disposable? = null
+    val scanResultSubject = PublishSubject.create<String>()
 
-                if(result.contents != null) {
-                    Log.d("TAG",result.contents)
-//                    cleanLog()
-                    mQRcode = result.contents
-                    //處理QRcode
-//                    {"T":"85AAF10630C3D1F6","K":"BB47D0D61173F7A39215C3F29816ED53","A":"ERICSHIH_TESTLOCK","M":"GNE1AJ"}
-//                    oneLockViewModel.insertNewLock(LockConnectionInfo(mQRcode?:""))
-//                    Navigation.findNavController(requireView()).navigate(R.id.action_back_to_alllocks)
-//                    return@registerForActivityResult
-                    decryptQRcode(result.contents) {
-//                        val bundle = Bundle()
-//                        bundle.putString("MAC_ADDRESS", it)
-                        Navigation.findNavController(requireView()).navigate(R.id.action_back_to_alllocks)
+    override fun onResume() {
+        super.onResume()
+        val cameraSettings = CameraSettings()
+        cameraSettings.requestedCameraId = 0
+        scanner.barcodeView.cameraSettings = cameraSettings
+        scanner.resume()
+        scanner.setStatusText("")
+        scanner.decodeSingle(object : BarcodeCallback {
+            override fun barcodeResult(result: BarcodeResult?) {
+                result?.text?.let { scanString ->
+                    try {
+//                        Timber.d("Scan result: $scanString")
+                        scanResultSubject.onNext(scanString)
+                    } catch (error: Throwable) {
+//                        Timber.d(error)
                     }
-
                 }
-            }else Navigation.findNavController(requireView()).navigate(R.id.action_back_to_alllocks)
-        }
-        startScanner()
+            }
+
+            override fun possibleResultPoints(resultPoints: MutableList<ResultPoint>?) {
+            }
+        })
+    }
+
+    override fun onViewHasCreated() {
+        scanResultDisposable?.isDisposed
+        scanResultDisposable = scanResultSubject
+            .map { scanString ->
+                mQRcode = scanString
+                decryptQRcode(scanString) {
+                    Navigation.findNavController(requireView()).navigate(R.id.action_scanFragment_to_installationFragment)
+                }
+            }.subscribe()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        scanResultDisposable?.dispose()
     }
 
     override fun onBackPressed() {
