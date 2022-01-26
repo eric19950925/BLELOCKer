@@ -1,18 +1,21 @@
 package com.example.blelocker.BluetoothUtils
 
+import android.util.Base64
 import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.blelocker.Entity.DeviceToken
+import com.example.blelocker.Entity.LockConnectionInformation
 import com.example.blelocker.MainActivity.Companion.NOTIFICATION_CHARACTERISTIC
-import com.example.blelocker.UseCase
+import com.example.blelocker.Model.LockConnInfoRepository
 import com.example.blelocker.toHex
 import com.example.blelocker.unSignedInt
 import com.polidea.rxandroidble2.*
-import com.polidea.rxandroidble2.scan.ScanFilter
-import com.polidea.rxandroidble2.scan.ScanResult
-import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.BiFunction
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.launch
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.util.concurrent.TimeUnit
@@ -21,19 +24,14 @@ import java.util.concurrent.TimeUnit
  * This is a class which will scan ble device and return result, using rxAndroidBle2 in reactivex java ver.2.
  * Won't use android.bluetooth.le.ScanResult
  */
-class BleScanUseCase (
+class BleConnectUseCase (
     private val rxBleClient: RxBleClient,
-    private val mBleCmdRepository: BleCmdRepository
-):UseCase.Execute<String?, Observable<ScanResult>> {
+    private val mBleCmdRepository: BleCmdRepository,
+    private val repository: LockConnInfoRepository
+): ViewModel() {
     private val disconnectTriggerSubject = PublishSubject.create<Unit>()
     private lateinit var connectionObservable: Observable<RxBleConnection>
-    override fun invoke(input: String?): Observable<ScanResult> {
-        return rxBleClient
-            .scanBleDevices(
-                ScanSettings.Builder().build(),
-                ScanFilter.Builder().setDeviceAddress(input).build()
-            )
-    }
+
     fun device(input: String): RxBleDevice {
         return rxBleClient.getBleDevice(input)
     }
@@ -112,33 +110,105 @@ class BleScanUseCase (
             }
     }
 
+    fun connectWithToken(mLock: LockConnectionInformation, rxBleConnection: RxBleConnection): Observable<String> {
+        val keyOne = Base64.decode(mLock.keyOne, Base64.DEFAULT)
+        val token = if (mLock.permanentToken.isBlank()) {
+            Base64.decode(mLock.oneTimeToken, Base64.DEFAULT)
+        } else {
+            Base64.decode(mLock.permanentToken, Base64.DEFAULT)
+        }
+        val isLockFromSharing =
+            mLock.sharedFrom != null && mLock.sharedFrom.isNotBlank()
 
-    fun setupNotify(
-        rxConnection: Observable<RxBleConnection>,
-        keyOne: ByteArray
-    ): Observable<ByteArray> {
-        return rxConnection
-            .flatMap {
-                it.setupNotification(NOTIFICATION_CHARACTERISTIC)
-                    .flatMap {
-                        notification -> notification
-                    }.filter { notification ->
-                        val decrypted = mBleCmdRepository.decrypt(
-                            keyOne,
-                            notification
-                        )
-                        println("filter [C0] decrypted: ${decrypted?.toHex()}")
-                        decrypted?.component3()?.unSignedInt() == 0xC0
+        return if (mLock.permanentToken.isBlank()) {
+            connectWithOneTimeToken(mLock, rxBleConnection, keyOne, token, isLockFromSharing)
+        } else {
+            connectWithPermanentToken(keyOne, token, mLock, rxBleConnection, isLockFromSharing)
+        }
+    }
+
+
+    private fun connectWithPermanentToken(
+        keyOne: ByteArray,
+        token: ByteArray,
+        mLock: LockConnectionInformation,
+        rxBleConnection: RxBleConnection,
+        isLockFromSharing: Boolean)
+            : Observable<String>{
+        return  sendC0(rxBleConnection, keyOne, token)
+            .flatMap { keyTwo ->
+                Log.d("TAG","get k2")
+                sendC1(rxBleConnection, keyTwo, token, isLockFromSharing)
+                    .filter { it.first == DeviceToken.VALID_TOKEN }
+                    .flatMap { stateAndPermission ->
+                        rxBleConnection
+                            .setupNotification(
+                                NOTIFICATION_CHARACTERISTIC,
+                                NotificationSetupMode.DEFAULT
+                            ) // receive [C1], [D6] only
+                            .flatMap { it }
+                            .map { keyTwo to it }
+                            .take(1)
+                            .doOnNext { pair ->
+//                                Timber.d("received receive [C1], [D6] in exchange permanent token")todo
+//                                viewModelScope.launch { mCharacteristicValue.value = "PermanentToken" to pair }
+                            }
+                            .flatMap { Observable.just(stateAndPermission.second) }
                     }
             }
-            .doOnNext { Log.d("TAG","setup notify Success") }
-            // we have to flatmap in order to get the actual notification observable
-            // out of the enclosing observable, which only performed notification setup
-//            .flatMap { it }
-//            .observeOn(AndroidSchedulers.mainThread())
-//            .subscribe({ Log.d("TAG","setup notify Success") }, { Log.d("TAG","setup notify Failure") })
+
     }
-    fun setupC0Notify(
+
+    private fun connectWithOneTimeToken(
+        mLock: LockConnectionInformation,
+        rxBleConnection: RxBleConnection,
+        keyOne: ByteArray,
+        oneTimeToken: ByteArray,
+        isLockFromSharing: Boolean
+    ): Observable<String>{
+        return sendC0(rxBleConnection, keyOne, oneTimeToken)
+            .flatMap { keyTwo ->
+                Log.d("TAG","get k2")
+                sendC1(rxBleConnection, keyTwo, oneTimeToken, isLockFromSharing)
+                    .take(1)
+                    .filter { it.first == DeviceToken.ONE_TIME_TOKEN || it.first == DeviceToken.VALID_TOKEN }
+                    .flatMap { stateAndPermission ->
+                        rxBleConnection
+                            .setupNotification(
+                                NOTIFICATION_CHARACTERISTIC,
+                                NotificationSetupMode.DEFAULT
+                            )
+                            .flatMap { it }
+                            .filter { notification -> // [E5] will sent from device
+                                mBleCmdRepository.decrypt(keyTwo, notification)?.let { bytes ->
+                                    bytes.component3().unSignedInt() == 0xE5
+                                } ?: false
+                            }
+                            .distinct { notification ->
+                                mBleCmdRepository.decrypt(keyTwo, notification)?.component3()
+                                    ?.unSignedInt() ?: 0xE5
+                            }
+                            .map { notification ->
+                                val token =
+                                    mBleCmdRepository.decrypt(keyTwo, notification)?.let { bytes ->
+                                        val permanentToken = mBleCmdRepository.extractToken(mBleCmdRepository.resolveE5(bytes))
+                                        permanentToken
+                                    } ?: throw NotConnectedException()
+                                keyTwo to token
+                            }
+                            .doOnNext { pair ->
+//                                Timber.d("received receive [C1], [E5], [D6] in exchange one time token")
+                                updateLockInfo(mLock, pair.first, pair.second as DeviceToken.PermanentToken)
+                            }
+                            .flatMap { pair ->
+                                val token = pair.second
+                                if (token is DeviceToken.PermanentToken) Observable.just(token.permission) else Observable.never()
+                            }
+                    }
+            }
+    }
+
+    private fun setupC0Notify(
         rxConnection: RxBleConnection,
         keyOne: ByteArray
     ): Observable<ByteArray> {
@@ -157,7 +227,7 @@ class BleScanUseCase (
     }
 
 
-    fun sendC00(
+    private fun sendC00(
         rxConnection: RxBleConnection,
         keyOne: ByteArray,
         token: ByteArray
@@ -173,7 +243,7 @@ class BleScanUseCase (
     }
 
 
-    fun sendC0(
+    private fun sendC0(
         rxConnection: RxBleConnection,
         keyOne: ByteArray,
         token: ByteArray
@@ -195,9 +265,23 @@ class BleScanUseCase (
                 keyTwo
             })
     }
+    private fun writeAndReadOnNotification(
+        rxBleConnection: RxBleConnection,
+        keyOne: ByteArray,
+        token: ByteArray
+    ): Observable<ByteArray?> {
+        return setupC0Notify(rxBleConnection, keyOne).let { notificationObservable ->
+            Observable.combineLatest(
+                sendC00(rxBleConnection, keyOne, token),
+                notificationObservable.take(1),
+                { writtenBytes: ByteArray, responseBytes: ByteArray ->
+                    responseBytes
+                }
+            )
+        }
+    }
 
-
-    fun rxSendC1(
+    private fun sendC1(
         rxConnection: RxBleConnection,
         keyTwo: ByteArray,
         token: ByteArray,
@@ -229,5 +313,12 @@ class BleScanUseCase (
                 deviceToken to permission
             }
         )
+    }
+    private fun updateLockInfo(mLock: LockConnectionInformation, mKeyTwo: ByteArray, token: DeviceToken.PermanentToken) = viewModelScope.launch {
+        repository.LockUpdate(mLock.copy(
+            keyTwo = Base64.encodeToString(mKeyTwo, Base64.DEFAULT),
+            permission = token.permission,
+            permanentToken = token.token
+        ))
     }
 }

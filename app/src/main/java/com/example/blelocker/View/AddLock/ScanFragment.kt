@@ -37,7 +37,6 @@ class ScanFragment: BaseFragment() {
         super.onResume()
         val cameraSettings = CameraSettings()
         cameraSettings.requestedCameraId = 0
-        cameraSettings.isAutoTorchEnabled = true
         scanner.barcodeView.cameraSettings = cameraSettings
         scanner.resume()
         scanner.setStatusText("")
@@ -72,6 +71,7 @@ class ScanFragment: BaseFragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         scanResultDisposable?.dispose()
+        scanner.pause()
     }
 
     override fun onBackPressed() {
@@ -162,15 +162,5 @@ class ScanFragment: BaseFragment() {
         } else {
             throw IllegalArgumentException("Invalid QR Code")
         }
-    }
-    // Start the QR Scanner
-    private fun startScanner() {
-        val scanner = IntentIntegrator(requireActivity())
-        // QR Code Format
-        scanner.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-        // Set Text Prompt at Bottom of QR code Scanner Activity
-        scanner.setPrompt("QR Code Scanner Prompt Text")
-        // Start Scanner (don't use initiateScan() unless if you want to use OnActivityResult)
-        mQrResultLauncher.launch(scanner.createScanIntent())
     }
 }

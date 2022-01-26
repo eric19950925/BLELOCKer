@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import com.example.blelocker.BluetoothUtils.BleCmdRepository
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
-import com.example.blelocker.BluetoothUtils.BleScanUseCase
+import com.example.blelocker.BluetoothUtils.BleConnectUseCase
 import com.example.blelocker.CognitoUtils.CognitoControlViewModel
 import com.example.blelocker.Model.LockConnInfoDAO
 import com.example.blelocker.Model.LockConnInfoDatabase
@@ -20,14 +20,13 @@ import org.koin.dsl.module
 import com.polidea.rxandroidble2.RxBleClient
 
 val cognitoModule = module {
-//    single { BleCmdRepository() }
     viewModel { CognitoControlViewModel(androidContext()/*,get()*/) }
 }
 
 val bluetoothModule = module {
     single { BleCmdRepository() }
-    single { BleScanUseCase(RxBleClient.create(androidContext()),get()) }
-    viewModel { BleControlViewModel(androidContext(),get(),get(),get()) }
+    viewModel { BleConnectUseCase(RxBleClient.create(androidContext()),get(),get()) }
+    viewModel { BleControlViewModel(androidContext(),get(),get()) }
 }
 
 

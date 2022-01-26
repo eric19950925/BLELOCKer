@@ -208,7 +208,7 @@ class BleCmdRepository {
     }
     /**
      * ByteArray [CC] data command. To bolt the lock orientation.
-     *
+     * Lock will be unlocked.
      * @return An encoded byte array of [CC] command.
      * */
     fun cc(
@@ -266,7 +266,7 @@ class BleCmdRepository {
     ): ByteArray {
         val sendByte = ByteArray(2)
         sendByte[0] = 0xD5.toByte() // function
-        sendByte[1] = 21.toByte() // function
+        sendByte[1] = Config.SIZE.byte.toByte() // function
         return encrypt(aesKeyTwo, pad(serial + sendByte + data))
             ?: throw IllegalArgumentException("bytes cannot be null")
     }
