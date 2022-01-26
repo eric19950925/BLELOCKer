@@ -37,6 +37,7 @@ class ScanFragment: BaseFragment() {
         super.onResume()
         val cameraSettings = CameraSettings()
         cameraSettings.requestedCameraId = 0
+        cameraSettings.isAutoTorchEnabled = true
         scanner.barcodeView.cameraSettings = cameraSettings
         scanner.resume()
         scanner.setStatusText("")

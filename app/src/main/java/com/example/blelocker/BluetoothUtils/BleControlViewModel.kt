@@ -14,12 +14,16 @@ import com.example.blelocker.Entity.*
 import com.example.blelocker.Entity.DeviceToken.DeviceTokenState.VALID_TOKEN
 import com.example.blelocker.MainActivity
 import com.example.blelocker.MainActivity.Companion.NOTIFICATION_CHARACTERISTIC
+import com.example.blelocker.Model.LockConnInfoRepository
 import com.example.blelocker.toHex
 import com.example.blelocker.unSignedInt
 import com.polidea.rxandroidble2.NotificationSetupMode
 import com.polidea.rxandroidble2.RxBleConnection
+import com.polidea.rxandroidble2.RxBleDevice
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
 import io.reactivex.rxkotlin.Observables
 import kotlinx.android.synthetic.main.fragment_onelock.*
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +37,8 @@ import org.koin.core.inject
 class BleControlViewModel(
     @SuppressLint("StaticFieldLeak") val context: Context,
     private val mBleCmdRepository: BleCmdRepository,
-    private val bleScanUseCase: BleScanUseCase
+    private val bleScanUseCase: BleScanUseCase,
+    private val repository: LockConnInfoRepository
     ): ViewModel(), KoinComponent {
     private val statefulConnection: StatefulConnection by inject()
     private var mBluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -47,10 +52,12 @@ class BleControlViewModel(
     private var mKeyTwo: ByteArray? = null
     private var randomNumberOne : ByteArray? = null
     private var mBleDeviceMacAddress: String? = null
-    private var connectionDisposable: CompositeDisposable? = null
+    private var connectionDisposable: Disposable? = null
+    private var stateDisposable: Disposable? = null
     private var sunion_service: BluetoothGattService? = null
     private var notify_characteristic: BluetoothGattCharacteristic? = null
     var mRxBleConnection = MutableLiveData<RxBleConnection>()
+    var mRxBleDevice = MutableLiveData<RxBleDevice>()
     var mMacAddress = MutableLiveData<String>()
 
     var mCharacteristicValue = MutableLiveData<Pair<String, Any>>()
@@ -61,20 +68,32 @@ class BleControlViewModel(
 
 
     fun rxBleConnectWithLock(mLock: LockConnectionInformation, success:() -> Unit, failure:(e:Throwable) -> Unit){
-        val disposable = bleScanUseCase
-            .connectDevice(mLock.macAddress)
-            .flatMap { rxConnect ->
-                viewModelScope.launch {
-                    mRxBleConnection.value = rxConnect
-                }
-                connectWithToken(mLock, rxConnect)
+        bleScanUseCase
+            .device(mLock.macAddress)
+            .let {
+                mRxBleDevice.value = it
+                val disposable = it.establishConnection(false)
+                    .flatMap { rxConnect ->
+                        viewModelScope.launch {
+                            mRxBleConnection.value = rxConnect
+                        }
+                        connectWithToken(mLock, rxConnect)
+                    }
+                    .subscribe({
+                        success.invoke()
+                    },{
+                        failure(it)
+                    })
+                connectionDisposable = disposable
             }
-            .subscribe({
-                success.invoke()
-            },{
-                failure(it)
-            })
-        connectionDisposable?.add(disposable)
+        (mRxBleDevice.value?:return).observeConnectionStateChanges()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe { onConnectionStateChange(it) }
+            .let { stateDisposable = it }
+    }
+
+    private fun onConnectionStateChange(newState: RxBleConnection.RxBleConnectionState) {
+        Log.d("TAG",newState.toString())
     }
 
     private fun connectWithToken(mLock: LockConnectionInformation, rxBleConnection: RxBleConnection): Observable<String> {
@@ -242,10 +261,11 @@ class BleControlViewModel(
                                 val token = pair.second
                                 if (token is DeviceToken.PermanentToken) {
                                     viewModelScope.launch {
-                                        mCharacteristicValue.value = "OneTimeToken" to pair
                                         mLockBleStatus.value = BleStatus.CONNECT
                                     }
                                 }
+                                updateLockInfo(mLock, pair.first, pair.second as DeviceToken.PermanentToken)
+
                             }
                             .flatMap { pair ->
                                 val token = pair.second
@@ -255,15 +275,21 @@ class BleControlViewModel(
             }
     }
 
+    private fun updateLockInfo(mLock: LockConnectionInformation, mKeyTwo: ByteArray, token: DeviceToken.PermanentToken) = viewModelScope.launch {
+        repository.LockUpdate(mLock.copy(
+            keyTwo = Base64.encodeToString(mKeyTwo, Base64.DEFAULT),
+            permission = token.permission,
+            permanentToken = token.token
+        ))
+    }
+
     fun disposeConnection(){
         connectionDisposable?.dispose()
     }
 
-    fun clearConnection(){
-        connectionDisposable?.clear()
+    fun disposeState(){
+        stateDisposable?.dispose()
     }
-
-
 
     fun bleScan(macAddress: String, keyOne: String){
         bleScanScope = viewModelScope.launch(Dispatchers.Main){
@@ -434,9 +460,13 @@ class BleControlViewModel(
                     val dataFromDevice = mBleCmdRepository.resolveCE(mKeyTwo?:return, characteristic.value)
                     if(dataFromDevice){
                         CloseGattScope()
-                        mLockBleStatus.value = BleStatus.UNCONNECT
+                        viewModelScope.launch {
+                            mLockBleStatus.value = BleStatus.UNCONNECT
+                        }
                     }
-                    viewModelScope.launch { mCharacteristicValue.value = "CE" to dataFromDevice }
+                    viewModelScope.launch {
+                        mCharacteristicValue.value = "CE" to dataFromDevice
+                    }
                 }
 
                 0xD4 -> {

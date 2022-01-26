@@ -12,6 +12,7 @@ import android.view.View
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import android.widget.EditText
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
@@ -62,6 +63,8 @@ class OneLockFragment: BaseFragment() {
         my_toolbar.menu.findItem(R.id.scan).isVisible = false
         my_toolbar.title = "BLE LOCKer"
 
+        //
+        setupBackPressedCallback()
         //set log textview
         log_tv.movementMethod = ScrollingMovementMethod.getInstance()
         log_tv.addTextChangedListener(object : TextWatcher{
@@ -261,6 +264,21 @@ class OneLockFragment: BaseFragment() {
 //            launchAdminCodeDialog(AdminCodeDialog.INSERT)
 //        }
 
+    }
+
+    private fun setupBackPressedCallback() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    Log.d("TAG","onBackPressed")
+                    bleViewModel.CloseGattScope()
+                    bleViewModel.mLockBleStatus.value = null
+                    bleViewModel.CloseBleScanScope()
+                    (requireActivity() as MainActivity).backToHome()
+                }
+            }
+        )
     }
 
     private fun launchAdminCodeDialog(onNext: Int) {

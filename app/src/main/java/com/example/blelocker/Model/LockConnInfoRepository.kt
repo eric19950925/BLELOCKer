@@ -24,7 +24,7 @@ class LockConnInfoRepository(private val lockConnInfoDAO: LockConnInfoDAO) {
     suspend fun LockUpdate(lockConnectionInformation: LockConnectionInformation){
         lockConnInfoDAO.insert(lockConnectionInformation)
     }
-    suspend fun deleteAllLocks(lockConnectionInformation: LockConnectionInformation){
+    suspend fun deleteOneLock(lockConnectionInformation: LockConnectionInformation){
         lockConnInfoDAO.delete(lockConnectionInformation)
     }
 }

@@ -27,7 +27,7 @@ val cognitoModule = module {
 val bluetoothModule = module {
     single { BleCmdRepository() }
     single { BleScanUseCase(RxBleClient.create(androidContext()),get()) }
-    viewModel { BleControlViewModel(androidContext(),get(),get()) }
+    viewModel { BleControlViewModel(androidContext(),get(),get(),get()) }
 }
 
 
