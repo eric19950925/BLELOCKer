@@ -15,7 +15,6 @@
     <LinearLayout
         android:id="@+id/ll_user_data"
         app:layout_constraintTop_toBottomOf="@+id/my_toolbar"
-        app:layout_constraintBottom_toTopOf="@+id/recyclerview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -48,10 +47,11 @@
         android:layout_height="0dp"
         tools:listitem="@layout/alllocks_recyclerview_item"
         android:padding="16dp"
-        app:layout_constraintBottom_toTopOf="@+id/btn_autoUnlock"
+        app:layout_constraintTop_toBottomOf="@+id/ll_user_data"
+        app:layout_constraintBottom_toTopOf="@+id/btn_mqtt_connect"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ll_user_data" />
+        />
     <Button
         android:id="@+id/btn_autoUnlock"
         android:layout_width="wrap_content"
@@ -61,12 +61,43 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginBottom="10dp"
+        android:visibility="gone"
         android:text="auto Unlock"/>
+    <Button
+        android:id="@+id/btn_mqtt_connect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/recyclerview"
+        app:layout_constraintBottom_toTopOf="@+id/btn_sub"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="5dp"
+        android:text="mqtt conn"/>
+    <Button
+        android:id="@+id/btn_sub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/btn_mqtt_connect"
+        app:layout_constraintBottom_toTopOf="@+id/btn_pub"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="5dp"
+        android:text="sub"/>
+    <Button
+        android:id="@+id/btn_pub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/btn_sub"
+        app:layout_constraintBottom_toTopOf="@+id/btn_logout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="5dp"
+        android:text="pub"/>
     <Button
         android:id="@+id/btn_logout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/btn_autoUnlock"
+        app:layout_constraintTop_toBottomOf="@+id/btn_pub"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

@@ -102,6 +102,7 @@ dependencies {
     // AWS Dependencies
     implementation 'com.amazonaws:aws-android-sdk-core:2.7.4'
     implementation 'com.amazonaws:aws-android-sdk-cognitoidentityprovider:2.7.0'
+    implementation 'com.amazonaws:aws-android-sdk-iot:2.7.0'
 
     ext.anko_version='0.10.8'
     implementation "org.jetbrains.anko:anko:$anko_version"

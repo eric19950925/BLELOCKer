@@ -58,10 +58,11 @@ class AllLocksFragment : BaseFragment(){
         recyclerview.adapter = adapter
         recyclerview.layoutManager = LinearLayoutManager(requireContext())
 
-        cognitoViewModel.getAccessToken{
+        cognitoViewModel.getUserInfo{
             tv_user_id.text = cognitoViewModel.mUserID.value
             tv_user_jwt_token.text = cognitoViewModel.mJwtToken.value
         }
+        cognitoViewModel.initialAWSIotClient()// todo 需要等待他做完才能connect
 
         my_toolbar.setOnMenuItemClickListener {
             when(it.itemId){
@@ -88,12 +89,25 @@ class AllLocksFragment : BaseFragment(){
             }
         }
         btn_logout.setOnClickListener {
-//            logOut()
+            logOut()
         }
 
         btn_autoUnlock.setOnClickListener {
             Navigation.findNavController(requireView()).navigate(R.id.action_alllocks_to_autolock)
         }
+
+        btn_mqtt_connect.setOnClickListener {
+            cognitoViewModel.mqttConnect()
+        }
+
+        btn_sub.setOnClickListener {
+            cognitoViewModel.mqttSubscribe()
+        }
+
+        btn_pub.setOnClickListener {
+            cognitoViewModel.mqttPublish()
+        }
+
     }
 
     private fun logOut()= viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
@@ -175,5 +189,8 @@ class AllLocksFragment : BaseFragment(){
         return mBluetoothManager.adapter?.isEnabled?:false
     }
 
-
+    override fun onDestroyView() {
+        super.onDestroyView()
+        cognitoViewModel.mqttDisconnect()
+    }
 }
