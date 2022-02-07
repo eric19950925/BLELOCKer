@@ -8,10 +8,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.*
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.AuthenticationContinuation
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.AuthenticationDetails
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.ChallengeContinuation
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.MultiFactorAuthenticationContinuation
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.AuthenticationHandler
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GenericHandler
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHandler
@@ -27,6 +23,8 @@ import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.mobileconnectors.iot.*
 import java.io.UnsupportedEncodingException
 import com.amazonaws.auth.AWSSessionCredentials
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.*
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.ForgotPasswordHandler
 
 
 class CognitoControlViewModel(val context: Context): ViewModel() {
@@ -89,7 +87,8 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
     fun initialAWSIotClient() = viewModelScope.launch(Dispatchers.IO) {
 
         getAccessToken{
-            //iot core can be call by CognitoCachingCredentialsProvider
+            //now mqtt can connect by CognitoCachingCredentialsProvider
+            mqttConnect()
         }
 
         mqttManager = AWSIotMqttManager(UUID.randomUUID().toString(), awsIotCoreEndPoint)
@@ -124,6 +123,38 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
             Toast.makeText(appContext, "Sign-up failed", Toast.LENGTH_LONG).show()
             Log.d(ContentValues.TAG, "Sign-up failed: $exception")
         }
+    }
+
+    fun forgotPasswordInBackground(userId: String?, newPassword: String?, handler: IdentityHandler){
+        val cognitoUser = userPool?.getUser(userId)
+
+        cognitoUser?.forgotPasswordInBackground(object: ForgotPasswordHandler {
+            override fun onSuccess() {
+                viewModelScope.launch {
+                    handler(IdentityRequest.SUCCESS,null) {}
+                }
+            }
+
+            override fun getResetCode(continuation: ForgotPasswordContinuation?) {
+                val mContinuation = checkNotNull(continuation) { "Invalid continuation handler" }
+                viewModelScope.launch {
+                    handler(IdentityRequest.NEED_NEWPASSWORD, null) { r -> run {
+                        val response = checkNotNull(r) { "Invalid identity response" }
+                        val verifyCode = response["Code"] ?: ""
+                        userPassword = response["Code"] ?: ""
+
+                        mContinuation.setPassword(newPassword)
+                        mContinuation.setVerificationCode(verifyCode)
+                        mContinuation.continueTask()
+                    }}
+                }
+            }
+
+            override fun onFailure(exception: Exception?) {
+                handleFailure(handler, exception?.toString())
+                handler(IdentityRequest.FAILURE, mapOf("exception" to exception)){}
+            }
+        })
     }
 
     fun confirmUser(userId: String?, code: String?) {
@@ -192,8 +223,7 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
 
                 }
 
-                override fun authenticationChallenge(continuation: ChallengeContinuation?) {
-                }
+                override fun authenticationChallenge(continuation: ChallengeContinuation?) {}
 
                 override fun onFailure(exception: Exception?) {
                     handleFailure(handler, exception?.toString())
@@ -235,6 +265,7 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
                 }
                 AWSIotMqttClientStatusCallback.AWSIotMqttClientStatus.Connected -> {
                     Log.d("TAG","Mqtt Connected")
+                    mqttSubscribe()
                 }
                 AWSIotMqttClientStatusCallback.AWSIotMqttClientStatus.ConnectionLost -> {
                     Log.d("TAG","Mqtt ConnectionLost")
@@ -254,7 +285,7 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
 
     fun mqttSubscribe(){
         try {
-            mqttManager?.subscribeToTopic("topic", AWSIotMqttQos.QOS0, mAWSIotMqttNewMessageCallback)
+            mqttManager?.subscribeToTopic("\$aws/things/242779ea-6972-4e2d-b7b5-dbe490e29def/shadow/get/accepted", AWSIotMqttQos.QOS0, mAWSIotMqttNewMessageCallback)
         }catch (e: Exception){
             Log.e("TAG", "mqttSubscribe error.", e)
         }
@@ -265,8 +296,8 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
             try {
                 val message = String(data?:return@AWSIotMqttNewMessageCallback, Charsets.UTF_8)
                 Log.d("TAG", "Message arrived:")
-                Log.d("TAG", "   Topic: $topic")
-                Log.d("TAG", " Message: $message")
+                Log.d("TAG", "   Topic       : $topic")
+                Log.d("TAG", "   Message     : $message")
 //                tvLastMessage.setText(message)
             } catch (e: UnsupportedEncodingException) {
                 Log.e("TAG", "Message encoding error.", e)
@@ -275,7 +306,7 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
 
     fun mqttPublish(){
         try {
-            mqttManager?.publishString("msg", "topic", AWSIotMqttQos.QOS0)
+            mqttManager?.publishString("{}", "\$aws/things/242779ea-6972-4e2d-b7b5-dbe490e29def/shadow/get", AWSIotMqttQos.QOS0)
         }catch (e: Exception){
             Log.e("TAG", "mqttPublish error.", e)
         }

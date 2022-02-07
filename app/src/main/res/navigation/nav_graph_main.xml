@@ -37,14 +37,14 @@
         <action
             android:id="@+id/action_login_to_alllock"
             app:destination="@id/all_locks_Fragment" />
+        <action
+            android:id="@+id/action_login_Fragment_to_enterUserId"
+            app:destination="@id/enterUserId" />
     </fragment>
     <fragment
         android:id="@+id/signup_Fragment"
         android:name="com.example.blelocker.View.SignIn.SignUpFragment"
         tools:layout="@layout/fragment_signup">
-        <action
-            android:id="@+id/action_back_to_login"
-            app:destination="@id/login_Fragment" />
     </fragment>
 
     <fragment
@@ -110,6 +110,19 @@
         <action
             android:id="@+id/action_alllocks_to_autolock"
             app:destination="@id/autoUnlock_Fragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/forgetPassword"
+        android:name="com.example.blelocker.View.SignIn.ForgetPassword"
+        android:label="ForgetPassword" >
+    </fragment>
+    <fragment
+        android:id="@+id/enterUserId"
+        android:name="com.example.blelocker.View.SignIn.EnterUserId"
+        android:label="EnterUserId" >
+        <action
+            android:id="@+id/action_enterUserId_to_forgetPassword"
+            app:destination="@id/forgetPassword" />
     </fragment>
 
 </navigation>

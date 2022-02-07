@@ -44,12 +44,21 @@
         app:layout_constraintTop_toBottomOf="@+id/etUsername"
         app:layout_constraintVertical_bias="0.004" />
 
+    <TextView
+        android:id="@+id/tv_forget_password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Forget password?"
+        app:layout_constraintTop_toBottomOf="@+id/etPassword"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_margin="8dp"/>
+
     <Button
         android:id="@+id/btnLogin"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="28dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="164dp"
         android:text="Login"
@@ -58,14 +67,14 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.428"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/etPassword"
+        app:layout_constraintTop_toBottomOf="@+id/tv_forget_password"
         app:layout_constraintVertical_bias="0.0" />
 
     <Button
         android:id="@+id/btnSignup"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="28dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:backgroundTint="@color/md_theme_dark_onError"

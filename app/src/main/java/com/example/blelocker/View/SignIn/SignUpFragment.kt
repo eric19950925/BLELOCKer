@@ -1,6 +1,5 @@
 package com.example.blelocker.View.SignIn
 
-import androidx.navigation.Navigation
 import com.example.blelocker.BaseFragment
 import com.example.blelocker.CognitoUtils.CognitoControlViewModel
 import com.example.blelocker.R
@@ -14,7 +13,7 @@ class SignUpFragment: BaseFragment() {
     override fun onViewHasCreated() {
         btnSignUp.setOnClickListener {
             if (etPass.getText().toString().endsWith(etRepeatPass.getText().toString())) {
-                userId = etUsername.getText().toString().replace(" ", "")
+                userId = etUsername.text.toString().replace(" ", "")
                 cognitoViewModel.addAttribute("name", userId)
                 cognitoViewModel.addAttribute(
                     "phone_number",
@@ -33,6 +32,5 @@ class SignUpFragment: BaseFragment() {
     }
 
     override fun onBackPressed() {
-        Navigation.findNavController(requireView()).navigate(R.id.action_back_to_login)
     }
 }

@@ -96,14 +96,6 @@ class AllLocksFragment : BaseFragment(){
             Navigation.findNavController(requireView()).navigate(R.id.action_alllocks_to_autolock)
         }
 
-        btn_mqtt_connect.setOnClickListener {
-            cognitoViewModel.mqttConnect()
-        }
-
-        btn_sub.setOnClickListener {
-            cognitoViewModel.mqttSubscribe()
-        }
-
         btn_pub.setOnClickListener {
             cognitoViewModel.mqttPublish()
         }

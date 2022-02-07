@@ -15,69 +15,70 @@ import com.example.blelocker.CognitoUtils.CognitoControlViewModel
 import com.example.blelocker.CognitoUtils.IdentityRequest
 import com.example.blelocker.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.android.synthetic.main.fragment_forget_password.*
 import kotlinx.android.synthetic.main.fragment_login.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.net.UnknownHostException
 
-class LoginFragment: BaseFragment() {
-    override fun getLayoutRes(): Int = R.layout.fragment_login
-    val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
-    private var MFAcodeDialog: AlertDialog? = null
-    override fun onViewHasCreated() {
-        btnLogin.setOnClickListener{
-            handleLogin()
-        }
-        btnSignup.setOnClickListener {
-            Navigation.findNavController(requireView()).navigate(R.id.action_login_to_signup)
-        }
-        tv_forget_password.setOnClickListener {
-            Navigation.findNavController(requireView()).navigate(R.id.action_login_Fragment_to_enterUserId)
-        }
+class ForgetPassword: BaseFragment() {
+    private val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
+    private var VerificationCodeDialog: AlertDialog? = null
+    override fun getLayoutRes()= R.layout.fragment_forget_password
 
+    override fun onViewHasCreated() {
+        btnSubmit.setOnClickListener {
+            if(etPass.text.toString() != etRepeatPass.text.toString())return@setOnClickListener
+            handleNewPassWord()
+        }
+    }
+
+    override fun onBackPressed() {
 
     }
 
-    private fun handleLogin() {
-        cognitoViewModel.initLogin(
-            etUsername.text.toString().replace(" ", "")
-        ) { identityRequest, map, callback ->
+    private fun handleNewPassWord(){
+        cognitoViewModel.forgotPasswordInBackground(cognitoViewModel.mUserID.value, etPass.text.toString())
+        { identityRequest, map, IdentityResponse ->
             when(identityRequest) {
-                IdentityRequest.NEED_CREDENTIALS -> {
-                    callback(mapOf("password" to etPassword.text.toString()))
-                }
+//                IdentityRequest.NEED_CREDENTIALS -> {
+//                    IdentityResponse(mapOf("password" to etPassword.text.toString()))
+//                }
+//
+//                IdentityRequest.NEED_MULTIFACTORCODE -> {
+////                    val editText = EditText(requireActivity())
+////                    MFAcodeDialog = MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
+////                        .setTitle("Enter your MFA code:")
+////                        .setCancelable(false)
+////                        .setView(editText)
+////                        .setPositiveButton("confirm") { dialog: DialogInterface, _: Int ->
+////                            IdentityResponse(mapOf("mfaCode" to editText.text.toString()))
+////                        }
+////                        .show()
+//                }
 
-                IdentityRequest.NEED_MULTIFACTORCODE -> {
+                IdentityRequest.NEED_NEWPASSWORD -> {
                     val editText = EditText(requireActivity())
-                    MFAcodeDialog = MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
-                        .setTitle("Enter your MFA code:")
+                    VerificationCodeDialog = MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
+                        .setTitle("Enter your Verification Code:")
                         .setCancelable(false)
                         .setView(editText)
                         .setPositiveButton("confirm") { dialog: DialogInterface, _: Int ->
-                            callback(mapOf("mfaCode" to editText.text.toString()))
+                            IdentityResponse(mapOf("Code" to editText.text.toString()))
                         }
                         .show()
                 }
 
-//                IdentityRequest.NEED_NEWPASSWORD -> {
-//                    val newPasswordDialog = layoutInflater.inflate(R.layout.dialog_new_password, null)
-//                    val passwordInput = newPasswordDialog.find(R.id.new_password_form_password) as EditText
-//                    alert {
-//                        title = "Enter New Password"
-//                        customView = newPasswordDialog
-//                        positiveButton("OK") { callback(mapOf("password" to passwordInput.text.toString())) }
-//                    }.show()
-//                }
-
                 IdentityRequest.SUCCESS -> {
-                    Navigation.findNavController(requireView()).navigate(R.id.action_login_to_alllock)
+                    Toast.makeText(requireActivity(), "Success!", Toast.LENGTH_LONG).show()
+                    //to login page
                 }
 
                 IdentityRequest.FAILURE -> {
                     viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
                         map?.let {
-                            when(it["exception"] as AmazonClientException ){
+                            when(it["exception"] as AmazonClientException){
                                 is CognitoParameterInvalidException -> {
                                     Toast.makeText(requireActivity(), "請填入帳號", Toast.LENGTH_LONG).show()
                                 }
@@ -88,7 +89,7 @@ class LoginFragment: BaseFragment() {
                                     Toast.makeText(requireActivity(), "帳號或密碼錯誤", Toast.LENGTH_LONG).show()
                                 }
                                 else ->{
-                                    if( it["exception"]?.cause is UnknownHostException ){
+                                    if( it["exception"]?.cause is UnknownHostException){
                                         Toast.makeText(requireActivity(), "網路錯誤", Toast.LENGTH_LONG).show()
                                         return@let
                                     }else Toast.makeText(requireActivity(), "發生某些錯誤", Toast.LENGTH_LONG).show()
@@ -104,10 +105,6 @@ class LoginFragment: BaseFragment() {
         }
     }
 
-    override fun onBackPressed() {
-
-    }
-
     private fun showErrorDialog() {
         MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
             .setTitle("ERROR")
@@ -118,5 +115,4 @@ class LoginFragment: BaseFragment() {
             }
             .show()
     }
-
 }
