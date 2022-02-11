@@ -25,6 +25,7 @@ import java.io.UnsupportedEncodingException
 import com.amazonaws.auth.AWSSessionCredentials
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.*
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.ForgotPasswordHandler
+import com.example.blelocker.Entity.MqttStatus
 
 
 class CognitoControlViewModel(val context: Context): ViewModel() {
@@ -63,6 +64,7 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
     var mUserID = MutableLiveData<String>()
 
     val mLoginStatus = MutableLiveData<Int>()
+    val mMqttStatus = MutableLiveData<Int>()
 
     init {
         appContext = context
@@ -85,7 +87,9 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
     }
 
     fun initialAWSIotClient() = viewModelScope.launch(Dispatchers.IO) {
-
+        viewModelScope.launch {
+            mMqttStatus.value = MqttStatus.UNCONNECT
+        }
         getAccessToken{
             //now mqtt can connect by CognitoCachingCredentialsProvider
             mqttConnect()
@@ -262,19 +266,33 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
             when(status){
                 AWSIotMqttClientStatusCallback.AWSIotMqttClientStatus.Connecting -> {
                     Log.d("TAG","Mqtt Connecting")
+                    viewModelScope.launch {
+                        mMqttStatus.value = MqttStatus.CONNECTTING
+                    }
                 }
                 AWSIotMqttClientStatusCallback.AWSIotMqttClientStatus.Connected -> {
                     Log.d("TAG","Mqtt Connected")
-                    mqttSubscribe()
+                    viewModelScope.launch {
+                        mMqttStatus.value = MqttStatus.CONNECTED
+                    }
                 }
                 AWSIotMqttClientStatusCallback.AWSIotMqttClientStatus.ConnectionLost -> {
                     Log.d("TAG","Mqtt ConnectionLost")
+                    viewModelScope.launch {
+                        mMqttStatus.value = MqttStatus.CONNECTION_LOST
+                    }
                 }
                 AWSIotMqttClientStatusCallback.AWSIotMqttClientStatus.Reconnecting -> {
                     Log.d("TAG","Mqtt Reconnecting")
+                    viewModelScope.launch {
+                        mMqttStatus.value = MqttStatus.RECONNECTING
+                    }
                 }
                 else -> {
                     Log.d("TAG",throwable.toString())
+                    viewModelScope.launch {
+                        mMqttStatus.value = MqttStatus.UNCONNECT
+                    }
                 }
             }
 
@@ -315,7 +333,7 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
     fun mqttDisconnect(){
         try {
             mqttManager?.disconnect()
-            Log.e("TAG", "mqttDisconnect success.")
+            Log.d("TAG", "mqttDisconnect success.")
         }catch (e: Exception){
             Log.e("TAG", "mqttDisconnect error.", e)
         }

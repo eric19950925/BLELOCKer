@@ -14,13 +14,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.blelocker.BaseFragment
+import com.example.blelocker.*
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.example.blelocker.CognitoUtils.CognitoControlViewModel
 import com.example.blelocker.CognitoUtils.LogOutRequest.*
-import com.example.blelocker.MainActivity
-import com.example.blelocker.OneLockViewModel
-import com.example.blelocker.R
+import com.example.blelocker.Entity.MqttStatus
 import kotlinx.android.synthetic.main.fragment_all_locks.*
 import kotlinx.android.synthetic.main.fragment_all_locks.my_toolbar
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +29,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class AllLocksFragment : BaseFragment(){
     val oneLockViewModel by viewModel<OneLockViewModel>()
     val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
+    val tfhApiViewModel by viewModel<TFHApiViewModel>()
     val bleViewModel by sharedViewModel<BleControlViewModel>()
     private lateinit var mSharedPreferences: SharedPreferences
     var count = 0
@@ -62,7 +61,7 @@ class AllLocksFragment : BaseFragment(){
             tv_user_id.text = cognitoViewModel.mUserID.value
             tv_user_jwt_token.text = cognitoViewModel.mJwtToken.value
         }
-        cognitoViewModel.initialAWSIotClient()// todo 需要等待他做完才能connect
+        cognitoViewModel.initialAWSIotClient()
 
         my_toolbar.setOnMenuItemClickListener {
             when(it.itemId){
@@ -88,6 +87,36 @@ class AllLocksFragment : BaseFragment(){
                 my_toolbar.menu.findItem(R.id.scan).isVisible = false
             }
         }
+
+        oneLockViewModel.isPowerOn.observe(this){ power ->
+            tv_power.text = if(power)"On" else "Off"
+        }
+
+        cognitoViewModel.mMqttStatus.observe(this){ status ->
+            when(status){
+               MqttStatus.UNCONNECT -> {
+                   btn_subpub_update.isClickable = false
+               }
+               MqttStatus.CONNECTED -> {
+                   tfhApiViewModel.subPubGetClassicShadow(cognitoViewModel.mqttManager?:return@observe){
+                       updateShadowPower(it)
+                       //正確顯示狀態後才能開始操作
+                       btn_subpub_update.isClickable = true
+                   }
+               }
+               MqttStatus.CONNECTTING -> {
+                   btn_subpub_update.isClickable = false
+               }
+               MqttStatus.CONNECTION_LOST -> {
+                   btn_subpub_update.isClickable = false
+               }
+               MqttStatus.RECONNECTING -> {
+                   btn_subpub_update.isClickable = false
+               }
+            }
+        }
+
+
         btn_logout.setOnClickListener {
             logOut()
         }
@@ -96,10 +125,22 @@ class AllLocksFragment : BaseFragment(){
             Navigation.findNavController(requireView()).navigate(R.id.action_alllocks_to_autolock)
         }
 
-        btn_pub.setOnClickListener {
-            cognitoViewModel.mqttPublish()
+        btn_subpub_update.setOnClickListener {
+            btn_subpub_update.isClickable = false
+            tfhApiViewModel.subPubUpdateClassicShadow(
+                cognitoViewModel.mqttManager?:return@setOnClickListener,
+                oneLockViewModel.isPowerOn.value?:return@setOnClickListener
+            ){
+                updateShadowPower(it)
+                btn_subpub_update.isClickable = true
+                //正確顯示狀態後才能開始操作
+            }
         }
 
+    }
+
+    private fun updateShadowPower(power: Boolean) = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+        oneLockViewModel.isPowerOn.value = power
     }
 
     private fun logOut()= viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){

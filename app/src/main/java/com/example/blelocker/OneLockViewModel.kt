@@ -14,6 +14,7 @@ import kotlin.random.Random
 class OneLockViewModel(private val repository: LockConnInfoRepository): ViewModel() {
     val mLockConnectionInfo = MutableLiveData<LockConnectionInformation>()
     val isRefreshing = MutableLiveData<Boolean>()
+    val isPowerOn = MutableLiveData<Boolean>()
     val allLocks: LiveData<List<LockConnectionInformation>> = repository.allLockInfo.asLiveData()
 
     fun insertLock(lockConnectionInformation: LockConnectionInformation) = viewModelScope.launch {

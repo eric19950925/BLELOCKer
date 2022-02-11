@@ -1,6 +1,7 @@
 package com.example.blelocker
 
 import android.app.Application
+import com.example.blelocker.Module.TFHApiModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -23,7 +24,8 @@ class MyApplication: Application() {
                 bluetoothModule,
                 GithubModule,
                 cognitoModule,
-                geofencingModule
+                geofencingModule,
+                TFHApiModule
             ))
         }
     }
