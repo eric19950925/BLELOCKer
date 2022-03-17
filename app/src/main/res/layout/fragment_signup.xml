@@ -62,6 +62,7 @@
             android:layout_marginEnd="8dp"
             android:ems="10"
             android:hint="Mobile"
+            android:visibility="gone"
             android:inputType="textPersonName"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="1.0"

@@ -8,94 +8,91 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.*
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.AuthenticationHandler
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.GenericHandler
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.SignUpHandler
 import com.amazonaws.regions.Regions
 import kotlinx.coroutines.launch
 import java.lang.Exception
-
 import com.amazonaws.auth.CognitoCachingCredentialsProvider
 import kotlinx.coroutines.Dispatchers
 import java.util.*
 import kotlin.collections.HashMap
 import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.mobileconnectors.iot.*
-import java.io.UnsupportedEncodingException
 import com.amazonaws.auth.AWSSessionCredentials
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.*
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.ForgotPasswordHandler
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.*
 import com.example.blelocker.Entity.MqttStatus
+import kotlinx.coroutines.Job
+import okhttp3.*
+import java.io.IOException
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 
-class CognitoControlViewModel(val context: Context): ViewModel() {
-    // ############################################################# Information about Cognito Pool Test
+class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttManager): ViewModel() {
     private val poolIDTest = "us-east-2_48Mq3KjSR"
     private val clientIDTest = "78nqui84c8qpl2vspofv9bd34l"
     private val clientSecretTest = "15aigi3rdp7g9lr4pjibvrj8u6fnc03o6edif4iukqtqslt59jrh"
-    private val awsRegionTest: Regions = Regions.US_EAST_2
-    // 來自應用程式用戶端的設定
-    // ############################################################# End of Information about Cognito Pool Test
-    // ############################################################# Information about Cognito Pool
-    private val poolID = "us-east-1_9H0qG2JDz"
-    private val clientID = "ai4604ihkdbac53lpqs1kchlp"
-    private val clientSecret = "13ems49degn68tfeq5o9q7aa4rbaku52oot35grahvpsdn6msrt0"
-    private val awsRegion: Regions = Regions.US_EAST_1
-    // ############################################################# End of Information about Cognito Pool
-    private var userPool: CognitoUserPool? = null
-    private var userAttributes // Used for adding attributes to the user
-            : CognitoUserAttributes? = null
-    private var credentialsProvider: CognitoCachingCredentialsProvider? = null
-    private var credentialsProvider_test: CognitoCachingCredentialsProvider? = null
+    private var credentialsproviderTest: CognitoCachingCredentialsProvider? = null
 
-    // ############################################################# iot core
-    // Customer specific IoT endpoint
-    // AWS Iot CLI describe-endpoint call returns: XXXXXXXXXX.iot.<region>.amazonaws.com,
-    private val awsIotCoreEndPoint: String = "a3jcdl3hkiliu4-ats.iot.us-east-1.amazonaws.com"
-    var mqttManager: AWSIotMqttManager? = null
-    var awsCredentials: AWSCredentials? = null
+    companion object {
+        const val USER_POOL_ID = "us-east-1_9H0qG2JDz"
+        const val USER_POOL_ADDRESS = "cognito-idp.us-east-1.amazonaws.com/us-east-1_9H0qG2JDz"
+        const val USER_POOL_CLIENT_ID = "ai4604ihkdbac53lpqs1kchlp"
+        const val USER_POOL_CLIENT_SECRET = "13ems49degn68tfeq5o9q7aa4rbaku52oot35grahvpsdn6msrt0"
+        const val IDENTITY_POOL_ID = "us-east-1:8266c1e3-feeb-4795-9e3b-9e6facb2f9ff"
+        const val AWS_IOT_CORE_END_POINT: String = "a3jcdl3hkiliu4-ats.iot.us-east-1.amazonaws.com"
+        const val CONTENT_TYPE_JSON = "application/json; charset=utf-8"
+    }
 
     private var appContext: Context? = null
+    private var userPool: CognitoUserPool? = null
+//    var mqttManager: AWSIotMqttManager? = null
+    // userAttributes is used for adding attributes to the user
+    private var userAttributes: CognitoUserAttributes? = null
+    private var credentialsProvider: CognitoCachingCredentialsProvider? = null
+
     private var userPassword: String? = null// Used for Login
     private var userID: String? = null// Used for Login
     private var userMFAcode: String? = null // Used for Login with MFA
-    private var currentUser = MutableLiveData<CognitoUser>()
+
+    var currentUser = MutableLiveData<CognitoUser>()
+    var mIdentityPoolId = MutableLiveData<String>()
     var mJwtToken = MutableLiveData<String>()
+    val mMqttStatus = MutableLiveData<Int>()
     var mUserID = MutableLiveData<String>()
 
-    val mLoginStatus = MutableLiveData<Int>()
-    val mMqttStatus = MutableLiveData<Int>()
 
     init {
         appContext = context
-        userPool = CognitoUserPool(context, poolID, clientID, clientSecret, awsRegion)
+        userPool = CognitoUserPool(context, USER_POOL_ID, USER_POOL_CLIENT_ID, USER_POOL_CLIENT_SECRET, Regions.US_EAST_1)
         userAttributes = CognitoUserAttributes()
 
-        // Initialize the Amazon Cognito credentials provider , pool id from mason
+//        credentialsproviderTest = CognitoCachingCredentialsProvider(context, "us-east-2:c5c0ecb7-09ef-41eb-8843-e6fa4baa387e",Regions.US_EAST_2 )
 
-        credentialsProvider_test = CognitoCachingCredentialsProvider(
-            context,
-            "us-east-2:c5c0ecb7-09ef-41eb-8843-e6fa4baa387e",  // Identity pool ID
-            Regions.US_EAST_2 // Region
-        )
+        credentialsProvider = CognitoCachingCredentialsProvider(context, IDENTITY_POOL_ID, Regions.US_EAST_1)
 
-        credentialsProvider = CognitoCachingCredentialsProvider(
-            context,
-            "us-east-1:8266c1e3-feeb-4795-9e3b-9e6facb2f9ff",  // Identity pool ID
-            Regions.US_EAST_1 // Region
-        )
     }
 
-    fun initialAWSIotClient() = viewModelScope.launch(Dispatchers.IO) {
-        viewModelScope.launch {
-            mMqttStatus.value = MqttStatus.UNCONNECT
-        }
+    override fun onCleared() {
+        closeCognitoCache()
+        super.onCleared()
+    }
+
+    fun closeCognitoCache() {
+        credentialsProvider?.clear()
+        credentialsProvider?.clearCredentials()
+    }
+
+    fun initMQTTbyAWSIotCore() = viewModelScope.launch(Dispatchers.IO) {
+//        viewModelScope.launch {
+//            mMqttStatus.value = MqttStatus.UNCONNECT
+//        }
         getAccessToken{
-            //now mqtt can connect by CognitoCachingCredentialsProvider
+            //Now mqtt can connect by CognitoCachingCredentialsProvider
             mqttConnect()
         }
 
-        mqttManager = AWSIotMqttManager(UUID.randomUUID().toString(), awsIotCoreEndPoint)
+//        mqttManager = AWSIotMqttManager(UUID.randomUUID().toString(), AWS_IOT_CORE_END_POINT)
     }
 
     fun signUpInBackground(userId: String?, password: String?) {
@@ -103,7 +100,7 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
         //userPool.signUp(userId, password, this.userAttributes, null, signUpCallback);
     }
 
-    var signUpCallback: SignUpHandler = object : SignUpHandler {
+    private var signUpCallback: SignUpHandler = object : SignUpHandler {
         override fun onSuccess(
             cognitoUser: CognitoUser,
             userConfirmed: Boolean,
@@ -181,6 +178,30 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
         userAttributes?.addAttribute(key, value)
     }
 
+    /**
+     * Before any action to do mqtt, need to check if has been global sign out by getDetail()
+     */
+    fun getUserDetails(onSuccess: (userId: String) -> Job, onFailure: () -> Job) = viewModelScope.launch(Dispatchers.IO) {
+        currentUser.value?.getDetails(object : GetDetailsHandler{
+            override fun onSuccess(cognitoUserDetails: CognitoUserDetails?) {
+                Log.d("TAG",cognitoUserDetails.toString())
+                val userAtts: MutableMap<String, String>? = cognitoUserDetails?.attributes?.attributes
+                val userName = userAtts?.get("name").toString()
+                viewModelScope.launch(Dispatchers.Main) {
+                    mUserID.value = userName
+                }
+                onSuccess(userName)
+            }
+
+            override fun onFailure(exception: Exception?) {
+                //been global sign out
+                Log.d("TAG",exception.toString())
+                currentUser.value?.signOut()
+                onFailure.invoke()
+            }
+        })
+    }
+
     fun initLogin(userId: String?, handler: IdentityHandler){
         try{
             userID = userId
@@ -240,10 +261,12 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
             handleFailure(handler, "Validation error")
         }
     }
+
     fun LogOut(handler: LogOutHandler){
-        currentUser.value?.signOut()
-        handler(LogOutRequest.SUCCESS)
-    /*object : GenericHandler {
+//        currentUser.value?.signOut()
+//        handler(LogOutRequest.SUCCESS)
+
+        currentUser.value?.globalSignOut(object : GenericHandler {
             override fun onSuccess() {
                 // User was successfully confirmed
                 handler(LogOutRequest.SUCCESS)
@@ -254,10 +277,10 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
                 handler(LogOutRequest.FAILURE)
                 Log.d("TAG",exception.toString())
             }
-        })*/
+        })
     }
 
-    fun mqttConnect(){
+    private fun mqttConnect(){
         mqttManager?.connect(credentialsProvider, mAWSIotMqttClientStatusCallback)
     }
 
@@ -301,35 +324,6 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
             }
         }
 
-    fun mqttSubscribe(){
-        try {
-            mqttManager?.subscribeToTopic("\$aws/things/242779ea-6972-4e2d-b7b5-dbe490e29def/shadow/get/accepted", AWSIotMqttQos.QOS0, mAWSIotMqttNewMessageCallback)
-        }catch (e: Exception){
-            Log.e("TAG", "mqttSubscribe error.", e)
-        }
-    }
-
-    private val mAWSIotMqttNewMessageCallback = 
-        AWSIotMqttNewMessageCallback { topic: String?, data: ByteArray? ->
-            try {
-                val message = String(data?:return@AWSIotMqttNewMessageCallback, Charsets.UTF_8)
-                Log.d("TAG", "Message arrived:")
-                Log.d("TAG", "   Topic       : $topic")
-                Log.d("TAG", "   Message     : $message")
-//                tvLastMessage.setText(message)
-            } catch (e: UnsupportedEncodingException) {
-                Log.e("TAG", "Message encoding error.", e)
-            }
-        }
-
-    fun mqttPublish(){
-        try {
-            mqttManager?.publishString("{}", "\$aws/things/242779ea-6972-4e2d-b7b5-dbe490e29def/shadow/get", AWSIotMqttQos.QOS0)
-        }catch (e: Exception){
-            Log.e("TAG", "mqttPublish error.", e)
-        }
-    }
-
     fun mqttDisconnect(){
         try {
             mqttManager?.disconnect()
@@ -368,12 +362,16 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
                 viewModelScope.launch(Dispatchers.IO){
                     val logins: MutableMap<String, String> = HashMap()
 
-                    logins.put("cognito-idp.us-east-1.amazonaws.com/us-east-1_9H0qG2JDz", userSession?.idToken?.jwtToken.toString())
+                    logins.put(USER_POOL_ADDRESS, userSession?.idToken?.jwtToken.toString())
+                    Log.d("TAG","jwtToken: "+userSession?.idToken?.jwtToken.toString())
                     try{
                         credentialsProvider?.logins = logins
-                        val mIdentityId = credentialsProvider?.identityId //use it to get aws service
+                        val mIdentityId = credentialsProvider?.identityId?:"" //use it to get aws service
+                        viewModelScope.launch(Dispatchers.Main){
+                            mIdentityPoolId.value = mIdentityId
+                        }
                         val mCredentials = credentialsProvider?.credentials
-                        Log.d("TAG",mIdentityId.toString())
+                        Log.d("TAG", "mIdentityId: $mIdentityId")
                         function(mCredentials)
                     }catch (e: Exception){
                         Log.e("TAG",e.toString())
@@ -391,6 +389,54 @@ class CognitoControlViewModel(val context: Context): ViewModel() {
 
         })
     }
+
+    fun setAttachPolicy(){
+        getIdentityId { jwtToken ->
+            val client = OkHttpClient()
+            val postBody = "{\"clientToken\":\"AAA\"}"
+            val MEDIA_TYPE_JSON = CONTENT_TYPE_JSON.toMediaType()
+
+            val request = Request.Builder()
+                .url("https://api.ikey-lock.com/v1/acl/attach-policy")
+                .header("Authorization", "Bearer $jwtToken")
+                .post(postBody.toRequestBody(MEDIA_TYPE_JSON))
+                .build()
+
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.d("TAG", e.toString())
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    Log.d("TAG", "response: ${response.body?.string()}")
+                }
+            })
+        }
+    }
+
+    private fun getIdentityId(function: (token: String) -> Unit) {
+        currentUser.value?.getSessionInBackground(object :AuthenticationHandler{
+            override fun onSuccess(userSession: CognitoUserSession?, newDevice: CognitoDevice?) {
+                viewModelScope.launch(Dispatchers.IO){
+                    try{
+                        function(userSession?.idToken?.jwtToken.toString())
+                    }catch (e: Exception){
+                        Log.e("TAG",e.toString())
+                    }
+                }
+            }
+
+            override fun getAuthenticationDetails(authenticationContinuation: AuthenticationContinuation?, userId: String?) {}
+
+            override fun getMFACode(continuation: MultiFactorAuthenticationContinuation?) {}
+
+            override fun authenticationChallenge(continuation: ChallengeContinuation?) {}
+
+            override fun onFailure(exception: Exception?) {}
+
+        })
+    }
+
 
     fun handleFailure(
             handler: (IdentityRequest, Map<String, Exception>?, IdentityResponse: (Map<String, String>?) -> Unit) -> Unit,

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph_main"
-    app:startDestination="@id/login_Fragment">
+    app:startDestination="@id/welcome">
     <include app:graph="@navigation/add_lock_graph" />
 
     <action
@@ -13,8 +13,8 @@
         android:id="@+id/global_pop_inclusive_to_onelock"/>
     <action
         app:popUpToInclusive="true"
-        app:popUpTo="@id/all_locks_Fragment"
-        app:destination="@id/all_locks_Fragment"
+        app:popUpTo="@id/home_Fragment"
+        app:destination="@id/home_Fragment"
         android:id="@+id/global_pop_inclusive_to_alllock"/>
     <fragment
         android:id="@+id/autoUnlock_Fragment"
@@ -25,7 +25,7 @@
             app:destination="@id/setting_Fragment" />
         <action
             android:id="@+id/back_to_home"
-            app:destination="@id/all_locks_Fragment" />
+            app:destination="@id/home_Fragment" />
     </fragment>
     <fragment
         android:id="@+id/login_Fragment"
@@ -36,7 +36,7 @@
             app:destination="@id/signup_Fragment" />
         <action
             android:id="@+id/action_login_to_alllock"
-            app:destination="@id/all_locks_Fragment" />
+            app:destination="@id/home_Fragment" />
         <action
             android:id="@+id/action_login_Fragment_to_enterUserId"
             app:destination="@id/enterUserId" />
@@ -53,7 +53,7 @@
         tools:layout="@layout/fragment_onelock">
         <action
             android:id="@+id/action_onelock_to_all"
-            app:destination="@id/all_locks_Fragment" />
+            app:destination="@id/home_Fragment" />
         <action
             android:id="@+id/action_onelock_to_setting"
             app:destination="@id/setting_Fragment" />
@@ -75,9 +75,6 @@
         android:name="com.example.blelocker.View.Github.GithubFragment"
         tools:layout="@layout/fragment_git_hub">
         <action
-            android:id="@+id/action_back_to_alllocks"
-            app:destination="@id/all_locks_Fragment" />
-        <action
             android:id="@+id/action_to_commits"
             app:destination="@id/commit_Fragment" />
     </fragment>
@@ -86,21 +83,18 @@
         android:id="@+id/commit_Fragment"
         android:name="com.example.blelocker.View.Github.CommitFragment"
         tools:layout="@layout/fragment_commits">
-        <action
-            android:id="@+id/action_back_to_github"
-            app:destination="@id/github_Fragment" />
     </fragment>
 
     <fragment
-        android:id="@+id/all_locks_Fragment"
-        android:name="com.example.blelocker.View.AllLocksFragment"
+        android:id="@+id/home_Fragment"
+        android:name="com.example.blelocker.View.HomeFragment"
         tools:layout="@layout/fragment_all_locks">
         <action
             android:id="@+id/action_alllocks_to_scan"
             app:destination="@id/add_lock_graph" />
         <action
-            android:id="@+id/action_alllocks_to_github"
-            app:destination="@id/github_Fragment" />
+            android:id="@+id/action_alllocks_to_account"
+            app:destination="@id/accountFragment" />
         <action
             android:id="@+id/action_to_onelock"
             app:destination="@id/one_lock_Fragment" />
@@ -123,6 +117,22 @@
         <action
             android:id="@+id/action_enterUserId_to_forgetPassword"
             app:destination="@id/forgetPassword" />
+    </fragment>
+    <fragment
+        android:id="@+id/welcome"
+        android:name="com.example.blelocker.View.Welcome"
+        android:label="Welcome" >
+        <action
+            android:id="@+id/action_welcome_to_login_Fragment"
+            app:destination="@id/login_Fragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/accountFragment"
+        android:name="com.example.blelocker.View.account.AccountFragment"
+        android:label="AccountFragment" >
+        <action
+            android:id="@+id/action_accountFragment_to_github_Fragment"
+            app:destination="@id/github_Fragment" />
     </fragment>
 
 </navigation>

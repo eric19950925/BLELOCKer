@@ -4,11 +4,9 @@ import android.animation.ValueAnimator
 import android.bluetooth.*
 import android.content.DialogInterface
 import android.content.SharedPreferences
-import android.text.Editable
-import android.text.TextWatcher
-import android.text.method.ScrollingMovementMethod
 import android.util.Log
-import android.view.View
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import android.widget.EditText
@@ -16,20 +14,15 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
+import androidx.viewbinding.ViewBinding
 import com.example.blelocker.*
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.example.blelocker.Entity.AdminCodeDialog
 import com.example.blelocker.Entity.BleStatus
 import com.example.blelocker.MainActivity.Companion.DATA
 import com.example.blelocker.Entity.DeviceToken
-import com.example.blelocker.Entity.LockStatus.LOCKED
-import com.example.blelocker.Entity.LockStatus.UNLOCKED
 import com.example.blelocker.MainActivity.Companion.CURRENT_LOCK_MAC
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.android.synthetic.main.fragment_onelock.*
-import kotlinx.android.synthetic.main.fragment_onelock.log_tv
-import kotlinx.android.synthetic.main.fragment_onelock.my_toolbar
-import kotlinx.android.synthetic.main.fragment_setting.*
 import kotlinx.coroutines.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.io.IOException
@@ -56,28 +49,31 @@ class OneLockFragment: BaseFragment() {
         this.repeatCount = ValueAnimator.INFINITE
     }
 
+    override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
+        return null
+    }
     override fun onViewHasCreated() {
         //set top menu
         setHasOptionsMenu(true)
-        my_toolbar.inflateMenu(R.menu.my_menu)
-        my_toolbar.menu.findItem(R.id.scan).isVisible = false
-        my_toolbar.title = "BLE LOCKer"
+//        my_toolbar.inflateMenu(R.menu.my_menu)
+//        my_toolbar.menu.findItem(R.id.scan).isVisible = false
+//        my_toolbar.title = "BLE LOCKer"
 
         //
         setupBackPressedCallback()
         //set log textview
-        log_tv.movementMethod = ScrollingMovementMethod.getInstance()
-        log_tv.addTextChangedListener(object : TextWatcher{
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
-            override fun afterTextChanged(s: Editable?) {
-                while (log_tv.canScrollVertically(1)) {
-                    log_tv.scrollBy(0, 10)
-                }
-            }
-        })
+//        log_tv.movementMethod = ScrollingMovementMethod.getInstance()
+//        log_tv.addTextChangedListener(object : TextWatcher{
+//            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+//
+//            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+//
+//            override fun afterTextChanged(s: Editable?) {
+//                while (log_tv.canScrollVertically(1)) {
+//                    log_tv.scrollBy(0, 10)
+//                }
+//            }
+//        })
 
         dialogScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
             try{ }finally {
@@ -97,43 +93,43 @@ class OneLockFragment: BaseFragment() {
 
 
         oneLockViewModel.mLockConnectionInfo.observe(viewLifecycleOwner){
-            tv_my_lock_mac.text = oneLockViewModel.mLockConnectionInfo.value?.macAddress
-            tv_my_lock_tk.text = oneLockViewModel.mLockConnectionInfo.value?.permanentToken
+//            tv_my_lock_mac.text = oneLockViewModel.mLockConnectionInfo.value?.macAddress
+//            tv_my_lock_tk.text = oneLockViewModel.mLockConnectionInfo.value?.permanentToken
         }
 
         //observe the blue tooth connect status to update ui
         bleViewModel.mLockBleStatus.observe(viewLifecycleOwner){
             when(it){
                 BleStatus.UNCONNECT -> {
-                    iv_my_lock_ble_status.visibility = View.VISIBLE
-                    btn_lock.clearAnimation()
-                    btn_lock.visibility = View.GONE
-                    ll_panel.visibility = View.GONE
-                    iv_factory.visibility = View.GONE
+//                    iv_my_lock_ble_status.visibility = View.VISIBLE
+//                    btn_lock.clearAnimation()
+//                    btn_lock.visibility = View.GONE
+//                    ll_panel.visibility = View.GONE
+//                    iv_factory.visibility = View.GONE
                     bleViewModel.mLockSetting.value = null
                     //show disconnect dialog to help reconnect.
                     disconnectDialog?.show()
                 }
 
                 BleStatus.CONNECTTING -> {
-                    iv_my_lock_ble_status.visibility = View.GONE
-                    btn_lock.visibility = View.VISIBLE
+//                    iv_my_lock_ble_status.visibility = View.GONE
+//                    btn_lock.visibility = View.VISIBLE
                     updateUIbySetting()
                     disconnectDialog?.cancel()
                 }
                 //back to this page from settings
                 BleStatus.CONNECT -> {
-                    iv_my_lock_ble_status.visibility = View.GONE
-                    btn_lock.visibility = View.VISIBLE
+//                    iv_my_lock_ble_status.visibility = View.GONE
+//                    btn_lock.visibility = View.VISIBLE
                     updateUIbySetting()
                     disconnectDialog?.cancel()
                 }
                 else -> {
-                    iv_my_lock_ble_status.visibility = View.VISIBLE
-                    btn_lock.clearAnimation()
-                    btn_lock.visibility = View.GONE
-                    ll_panel.visibility = View.GONE
-                    iv_factory.visibility = View.GONE
+//                    iv_my_lock_ble_status.visibility = View.VISIBLE
+//                    btn_lock.clearAnimation()
+//                    btn_lock.visibility = View.GONE
+//                    ll_panel.visibility = View.GONE
+//                    iv_factory.visibility = View.GONE
                     bleViewModel.mLockSetting.value = null
                 }
             }
@@ -181,7 +177,7 @@ class OneLockFragment: BaseFragment() {
                             //clean data
                             oneLockViewModel.mLockConnectionInfo.value = null
                             //set ble scan btn not clickable
-                            iv_my_lock_ble_status.isClickable = false
+//                            iv_my_lock_ble_status.isClickable = false
                             showLog("CE notify 重置成功")
                         }
                     }else {
@@ -203,63 +199,63 @@ class OneLockFragment: BaseFragment() {
         }
 
         //click and go to scan page
-        iv_my_lock_ble_status.setOnClickListener {
-            checkToStartBleScan()
-        }
+//        iv_my_lock_ble_status.setOnClickListener {
+//            checkToStartBleScan()
+//        }
 
         //click to lock/unlock
-        btn_lock.setOnClickListener {
-            bleViewModel.sendD7(bleViewModel.mLockSetting.value?.status == LOCKED)
-            btn_lock_wait()
-        }
+//        btn_lock.setOnClickListener {
+//            bleViewModel.sendD7(bleViewModel.mLockSetting.value?.status == LOCKED)
+//            btn_lock_wait()
+//        }
 
         //top menu function
-        my_toolbar.setOnMenuItemClickListener {
-            when(it.itemId){
-                R.id.delete -> {
-                    cleanLog()
-                    true
-                }
-                R.id.play -> {
-                    my_toolbar.menu.findItem(R.id.play).isVisible = false
-                    my_toolbar.menu.findItem(R.id.pause).isVisible = true
-                    testScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                        try{
-                            var timestamp_ = 0
-                            while(timestamp_<60) {
-                                delay(1000)
-                                timestamp_ += 1
-                                requireActivity().runOnUiThread{
-                                    showLog("Thread Test ${timestamp_}")
-                                }
-                            }
-                        }finally {
-                            requireActivity().runOnUiThread{
-                                showLog("Stop Thread Test.")
-                                my_toolbar.menu.findItem(R.id.pause).isVisible = false
-                                my_toolbar.menu.findItem(R.id.play).isVisible = true
-                            }
-                        }
-                    }
-                    true
-                }
-                R.id.pause -> {
-                    my_toolbar.menu.findItem(R.id.pause).isVisible = false
-                    my_toolbar.menu.findItem(R.id.play).isVisible = true
-                    testScope?.cancel()
-                    true
-                }
-                else -> false
-            }
-        }
+//        my_toolbar.setOnMenuItemClickListener {
+//            when(it.itemId){
+//                R.id.delete -> {
+//                    cleanLog()
+//                    true
+//                }
+//                R.id.play -> {
+//                    my_toolbar.menu.findItem(R.id.play).isVisible = false
+//                    my_toolbar.menu.findItem(R.id.pause).isVisible = true
+//                    testScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+//                        try{
+//                            var timestamp_ = 0
+//                            while(timestamp_<60) {
+//                                delay(1000)
+//                                timestamp_ += 1
+//                                requireActivity().runOnUiThread{
+//                                    showLog("Thread Test ${timestamp_}")
+//                                }
+//                            }
+//                        }finally {
+//                            requireActivity().runOnUiThread{
+//                                showLog("Stop Thread Test.")
+//                                my_toolbar.menu.findItem(R.id.pause).isVisible = false
+//                                my_toolbar.menu.findItem(R.id.play).isVisible = true
+//                            }
+//                        }
+//                    }
+//                    true
+//                }
+//                R.id.pause -> {
+//                    my_toolbar.menu.findItem(R.id.pause).isVisible = false
+//                    my_toolbar.menu.findItem(R.id.play).isVisible = true
+//                    testScope?.cancel()
+//                    true
+//                }
+//                else -> false
+//            }
+//        }
 
-        iv_factory.setOnClickListener {
-            launchAdminCodeDialog(AdminCodeDialog.FACTORY_RESET)
-        }
+//        iv_factory.setOnClickListener {
+//            launchAdminCodeDialog(AdminCodeDialog.FACTORY_RESET)
+//        }
 
-        btn_setting.setOnClickListener {
-            Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_setting)
-        }
+//        btn_setting.setOnClickListener {
+//            Navigation.findNavController(requireView()).navigate(R.id.action_onelock_to_setting)
+//        }
 //        btn_admin_code.setOnClickListener {
 //            launchAdminCodeDialog(AdminCodeDialog.INSERT)
 //        }
@@ -344,30 +340,30 @@ class OneLockFragment: BaseFragment() {
     private fun updateUIbySetting() {
         bleViewModel.mLockSetting.value.let {
             if(it == null){
-                btn_lock.setBackgroundResource(R.drawable.ic_loading_main)
-                btn_lock.startAnimation(rotateAnimation)
-                iv_factory.visibility = View.GONE
-                ll_panel.visibility = View.GONE
+//                btn_lock.setBackgroundResource(R.drawable.ic_loading_main)
+//                btn_lock.startAnimation(rotateAnimation)
+//                iv_factory.visibility = View.GONE
+//                ll_panel.visibility = View.GONE
                 btn_lock_wait()
             }else{
-                btn_lock.clearAnimation()
-                iv_factory.visibility = View.VISIBLE
-                ll_panel.visibility = View.VISIBLE
+//                btn_lock.clearAnimation()
+//                iv_factory.visibility = View.VISIBLE
+//                ll_panel.visibility = View.VISIBLE
                 btn_lock_ready()
                 when(it.status){
-                    LOCKED -> btn_lock.setBackgroundResource(R.drawable.ic_lock_main)
-                    UNLOCKED -> btn_lock.setBackgroundResource(R.drawable.ic_auto_unlock)
+//                    LOCKED -> btn_lock.setBackgroundResource(R.drawable.ic_lock_main)
+//                    UNLOCKED -> btn_lock.setBackgroundResource(R.drawable.ic_auto_unlock)
                 }
             }
         }
     }
 
     private fun btn_lock_wait() {
-        btn_lock.isClickable = false
+//        btn_lock.isClickable = false
     }
 
     private fun btn_lock_ready() {
-        btn_lock.isClickable = true
+//        btn_lock.isClickable = true
     }
 
     private fun bleScan() {
@@ -427,7 +423,7 @@ class OneLockFragment: BaseFragment() {
         //if use the bundle to get data, can only get data when enter this page from all lock page.
         //want to get data every time launch this page by resume(ex:wake from sleep), should store data in sp.
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-            oneLockViewModel.getLockInfo(readCurrentLockMac()?:return@launch)
+            oneLockViewModel.getLockInfo(readCurrentLockMac()?:return@launch) {}
             if(bleViewModel.mLockBleStatus.value == BleStatus.CONNECT)return@launch
             delay(100)
             oneLockViewModel.mLockConnectionInfo.value?.let {
@@ -445,16 +441,16 @@ class OneLockFragment: BaseFragment() {
 
     private fun showLog(logText: String) {
         try {
-            var log = log_tv.text.toString()
-
-            log = log +"${logText}\n"
-
-            log_tv.text = log
+//            var log = log_tv.text.toString()
+//
+//            log = log +"${logText}\n"
+//
+//            log_tv.text = log
         } catch (e: IOException) {
         }
     }
     private fun cleanLog() {
-        log_tv.text = ""
+//        log_tv.text = ""
     }
     private fun saveCurrentLockMac(macAddress: String) {
         mSharedPreferences = requireActivity().getSharedPreferences(DATA, 0)

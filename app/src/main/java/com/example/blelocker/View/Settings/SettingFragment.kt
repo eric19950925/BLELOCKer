@@ -2,22 +2,19 @@ package com.example.blelocker.View.Settings
 
 import android.annotation.SuppressLint
 import android.content.DialogInterface
-import android.text.Editable
-import android.text.TextWatcher
-import android.text.method.ScrollingMovementMethod
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
+import androidx.viewbinding.ViewBinding
 import com.example.blelocker.BaseFragment
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
-import com.example.blelocker.Entity.BleStatus
-import com.example.blelocker.Entity.LockConfig
-import com.example.blelocker.Entity.LockSetting
 import com.example.blelocker.OneLockViewModel
 import com.example.blelocker.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.android.synthetic.main.fragment_setting.*
-import kotlinx.android.synthetic.main.fragment_setting.log_tv
-import kotlinx.android.synthetic.main.fragment_setting.my_toolbar
+//import kotlinx.android.synthetic.main.fragment_setting.*
+//import kotlinx.android.synthetic.main.fragment_setting.log_tv
+//import kotlinx.android.synthetic.main.fragment_setting.my_toolbar
 import kotlinx.coroutines.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import java.io.IOException
@@ -26,8 +23,12 @@ class SettingFragment: BaseFragment() {
     val bleViewModel by sharedViewModel<BleControlViewModel>()
     val oneLockViewModel by sharedViewModel<OneLockViewModel>()
     override fun getLayoutRes(): Int  = R.layout.fragment_setting
+    override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
+        return null
+    }
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewHasCreated() {
+        /*
         //set top menu
         setHasOptionsMenu(true)
         my_toolbar.inflateMenu(R.menu.my_menu)
@@ -131,7 +132,7 @@ class SettingFragment: BaseFragment() {
             //check permission before enter geofencing page
             Navigation.findNavController(requireView()).navigate(R.id.action_setting_to_autolock)
         }
-
+*/
     }
 
     private fun showReConnDialog() = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
@@ -146,11 +147,11 @@ class SettingFragment: BaseFragment() {
 
     private fun showLog(logText: String) {
         try {
-            var log = log_tv.text.toString()
-
-            log = log +"${logText}\n"
-
-            log_tv.text = log
+//            var log = log_tv.text.toString()
+//
+//            log = log +"${logText}\n"
+//
+//            log_tv.text = log
         } catch (e: IOException) {
         }
     }

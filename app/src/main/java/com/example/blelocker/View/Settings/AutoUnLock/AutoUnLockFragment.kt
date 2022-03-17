@@ -3,14 +3,14 @@ package com.example.blelocker.View.Settings.AutoUnLock
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.os.Build
-import android.util.Log
-import android.widget.Toast
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.navigation.Navigation
+import androidx.viewbinding.ViewBinding
 import com.example.blelocker.*
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
-import com.google.android.gms.common.api.ApiException
-import kotlinx.android.synthetic.main.fragment_auto_unlock.*
+//import kotlinx.android.synthetic.main.fragment_auto_unlock.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -19,10 +19,13 @@ class AutoUnLockFragment: BaseFragment(){
     private lateinit var mSharedPreferences: SharedPreferences
     private val geofenceViewModel by viewModel<GeofencingViewModel>()
     private val bleViewModel by sharedViewModel<BleControlViewModel>()
+    override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
+        return null
+    }
     @RequiresApi(Build.VERSION_CODES.S)
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewHasCreated() {
-
+/*
         switch_geofence.isChecked = readGeoSP()
 
         switch_geofence.setOnTouchListener { _, _ ->
@@ -74,6 +77,7 @@ class AutoUnLockFragment: BaseFragment(){
             }
             false
         }
+        */
     }
 
     override fun onBackPressed() {

@@ -14,31 +14,37 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        style="@style/styleText"
         android:text="Lock Name"/>
     <EditText
-        android:id="@+id/et_lock_name"
+        android:id="@+id/etLockName"
+        android:textColor="@color/primary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        style="@style/styleText"
         android:text="Admin Code"/>
     <EditText
         android:id="@+id/et_admin_code"
+        android:textColor="@color/primary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
     <TextView
+        style="@style/styleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Time Zone"/>
     <EditText
         android:id="@+id/et_time_zone"
+        android:textColor="@color/primary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 </LinearLayout>
 
     <Button
-        android:id="@+id/btn_next"
+        android:id="@+id/btnNext"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Next"

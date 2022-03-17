@@ -2,17 +2,20 @@ package com.example.blelocker.View.AddLock
 
 import android.content.DialogInterface
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
+import androidx.viewbinding.ViewBinding
 import com.example.blelocker.BaseFragment
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.example.blelocker.Entity.BleStatus
 import com.example.blelocker.MainActivity
 import com.example.blelocker.OneLockViewModel
 import com.example.blelocker.R
+import com.example.blelocker.databinding.FragmentConnectBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.android.synthetic.main.fragment_connect.*
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
@@ -20,16 +23,20 @@ class ConnectFragment: BaseFragment(){
     private val bleControlViewModel by sharedViewModel<BleControlViewModel>()
     private val oneLockViewModel by sharedViewModel<OneLockViewModel>()
     override fun getLayoutRes(): Int = R.layout.fragment_connect
-
+    private lateinit var currentBinding: FragmentConnectBinding
+    override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
+        currentBinding = FragmentConnectBinding.inflate(inflater, container, false)
+        return currentBinding
+    }
     override fun onViewHasCreated() {
 
         bleControlViewModel.mLockBleStatus.observe(this) {
-            btn_connect.isClickable = true
-            btn_connect.text = if(it == BleStatus.CONNECT)"Connect" else "Start"
+            currentBinding.btnConnect.isClickable = true
+            currentBinding.btnConnect.text = if(it == BleStatus.CONNECT)"Connect" else "Start"
         }
 
-        btn_connect.setOnClickListener {
-            btn_connect.isClickable = false
+        currentBinding.btnConnect.setOnClickListener {
+            currentBinding.btnConnect.isClickable = false
             if(bleControlViewModel.mLockBleStatus.value == BleStatus.CONNECT){
                 toSelectWiFiPage()
             }else{
@@ -85,11 +92,12 @@ class ConnectFragment: BaseFragment(){
         )
     }
 
-    private fun updateCurrentMacAddress() = viewLifecycleOwner.lifecycleScope.launch{
+    private fun updateCurrentMacAddress() = viewLifecycleOwner.lifecycleScope.launch {
         bleControlViewModel.mMacAddress.value = oneLockViewModel.mLockConnectionInfo.value?.macAddress
     }
 
     override fun onBackPressed() {
+
     }
 
 }

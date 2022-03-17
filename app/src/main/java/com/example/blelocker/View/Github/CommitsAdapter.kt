@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.blelocker.R
 import com.example.blelocker.View.inflate
 import com.example.blelocker.Entity.GitHubCommits
-import kotlinx.android.synthetic.main.commits_recyclerview_item.view.*
+//import kotlinx.android.synthetic.main.commits_recyclerview_item.view.*
 
 class CommitsAdapter(private val onClickListener: OnClickListener) : ListAdapter<GitHubCommits, CommitsAdapter.CommitsHolder>(
     LockComparator()
@@ -31,8 +31,8 @@ class CommitsAdapter(private val onClickListener: OnClickListener) : ListAdapter
     class CommitsHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         fun bind(gitHubCommits: GitHubCommits){
-            itemView.tv_commit_date.text = gitHubCommits.commit.author.date
-            itemView.tv_commit_msg.text = gitHubCommits.commit.message
+//            itemView.tv_commit_date.text = gitHubCommits.commit.author.date
+//            itemView.tv_commit_msg.text = gitHubCommits.commit.message
         }
     }
     class LockComparator : DiffUtil.ItemCallback<GitHubCommits>() {

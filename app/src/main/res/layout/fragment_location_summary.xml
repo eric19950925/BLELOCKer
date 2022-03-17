@@ -19,10 +19,12 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_margin="10dp"
+                android:textColor="@color/primary"
                 android:text="Lock Name :"
                 android:textSize="20dp" />
             <TextView
                 android:id="@+id/tv_lock_name"
+                android:textColor="@color/primary"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
@@ -39,12 +41,14 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_margin="10dp"
+                android:textColor="@color/primary"
                 android:text="User Name :"
                 android:textSize="20dp" />
             <TextView
                 android:id="@+id/tv_user_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/primary"
                 android:layout_gravity="center_horizontal"
                 android:layout_margin="10dp"
                 android:text=""

@@ -6,12 +6,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.blelocker.Entity.DeviceToken
 import com.example.blelocker.Entity.LockConnectionInformation
+import com.example.blelocker.Entity.LockSetting
+import com.example.blelocker.Entity.LockStatus
+import com.example.blelocker.Entity.LockStatus.LOCKED
+import com.example.blelocker.Exception.LockStatusException
+import com.example.blelocker.MainActivity
 import com.example.blelocker.MainActivity.Companion.NOTIFICATION_CHARACTERISTIC
 import com.example.blelocker.Model.LockConnInfoRepository
 import com.example.blelocker.toHex
 import com.example.blelocker.unSignedInt
 import com.polidea.rxandroidble2.*
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import io.reactivex.functions.BiFunction
 import io.reactivex.subjects.PublishSubject
@@ -150,8 +156,16 @@ class BleConnectUseCase (
                             .map { keyTwo to it }
                             .take(1)
                             .doOnNext { pair ->
-//                                Timber.d("received receive [C1], [D6] in exchange permanent token")todo
+//                                Timber.d("received receive [C1], [D6] in exchange permanent token")
 //                                viewModelScope.launch { mCharacteristicValue.value = "PermanentToken" to pair }
+                                viewModelScope.launch {repository.LockUpdate(mLock.copy(
+                                    keyTwo = Base64.encodeToString(
+                                        keyTwo,
+                                        Base64.DEFAULT
+                                    ),
+                                    deviceName = mLock.deviceName ,
+                                    permission = stateAndPermission.second
+                                ))}
                             }
                             .flatMap { Observable.just(stateAndPermission.second) }
                     }
@@ -196,7 +210,7 @@ class BleConnectUseCase (
                                     } ?: throw NotConnectedException()
                                 keyTwo to token
                             }
-                            .doOnNext { pair ->
+                            .doOnNext { pair -> //todo
 //                                Timber.d("received receive [C1], [E5], [D6] in exchange one time token")
                                 updateLockInfo(mLock, pair.first, pair.second as DeviceToken.PermanentToken)
                             }
@@ -321,4 +335,7 @@ class BleConnectUseCase (
             permanentToken = token.token
         ))
     }
+
+
+
 }

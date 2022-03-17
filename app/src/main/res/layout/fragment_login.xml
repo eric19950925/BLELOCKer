@@ -1,10 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:edit_field_compound="http://schemas.android.com/apk/res-auto"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <EditText
+    <ImageView
+        android:layout_width="@dimen/dp_80"
+        android:layout_height="@dimen/dp_80"
+        android:src="@drawable/ic_auto_unlock"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tv_title"/>
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/etUsername"
+        android:text="Login"
+        android:textStyle="bold"
+        android:textSize="@dimen/dp_30"
+        android:textColor="@color/black"
+        android:layout_marginStart="@dimen/dp_10"
+        android:layout_marginBottom="@dimen/dp_20"/>
+
+    <com.example.blelocker.widget.EditFieldCompoundView
         android:id="@+id/etUsername"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -12,10 +34,10 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
+        edit_field_compound:inputType="email"
+        edit_field_compound:title="E-mail"
         android:ems="10"
         android:hint="Username"
-        android:importantForAutofill="no"
-        android:inputType="textPersonName"
         android:textAlignment="viewStart"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -24,7 +46,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.376" />
 
-    <EditText
+    <com.example.blelocker.widget.EditFieldCompoundView
         android:id="@+id/etPassword"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -32,10 +54,13 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
+        edit_field_compound:inputType="password"
+        edit_field_compound:title="Password"
         android:ems="10"
         android:hint="Password"
         android:importantForAutofill="no"
         android:inputType="textPassword"
+        android:minHeight="48dp"
         android:textAlignment="viewStart"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -45,10 +70,11 @@
         app:layout_constraintVertical_bias="0.004" />
 
     <TextView
-        android:id="@+id/tv_forget_password"
+        android:id="@+id/tvForgetPassword"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Forget password?"
+        android:textColor="@color/black"
         app:layout_constraintTop_toBottomOf="@+id/etPassword"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_margin="8dp"/>
@@ -67,7 +93,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.428"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_forget_password"
+        app:layout_constraintTop_toBottomOf="@+id/tvForgetPassword"
         app:layout_constraintVertical_bias="0.0" />
 
     <Button

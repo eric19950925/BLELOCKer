@@ -18,7 +18,6 @@ import com.polidea.rxandroidble2.RxBleConnection
 import com.polidea.rxandroidble2.RxBleDevice
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
-import kotlinx.android.synthetic.main.fragment_onelock.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -71,6 +70,8 @@ class BleControlViewModel(
                         bleConnectUseCase.connectWithToken(mLock, rxConnect)
                     }
                     .subscribe({
+                        //only user has all permission can continue next step , need to edit todo
+                        Log.d("TAG","Success connect with $it Permission.")
                         if(it.equals("A")){
                             success.invoke()
                             viewModelScope.launch {
@@ -79,13 +80,16 @@ class BleControlViewModel(
                         }
                     },{
                         failure(it)
+                        viewModelScope.launch {
+                            mLockBleStatus.value = BleStatus.UNCONNECT
+                        }
                     })
                 connectionDisposable = disposable
             }
-        (mRxBleDevice.value?:return).observeConnectionStateChanges()
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe { onConnectionStateChange(it) }
-            .let { stateDisposable = it }
+//        (mRxBleDevice.value?:return).observeConnectionStateChanges()
+//            .observeOn(AndroidSchedulers.mainThread())
+//            .subscribe { onConnectionStateChange(it) }
+//            .let { stateDisposable = it }
     }
 
     private fun onConnectionStateChange(newState: RxBleConnection.RxBleConnectionState) {

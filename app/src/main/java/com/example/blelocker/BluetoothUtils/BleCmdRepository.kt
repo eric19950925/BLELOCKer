@@ -123,7 +123,7 @@ class BleCmdRepository {
 //            0xD3 -> d3(serialIncrementAndGet(), key, data)
             0xD4 -> d4(serialIncrementAndGet(), key)
             0xD5 -> d5(serialIncrementAndGet(), key, data)
-//            0xD6 -> d6(serialIncrementAndGet(), key)
+            0xD6 -> d6(serialIncrementAndGet(), key)
             0xD7 -> d7(serialIncrementAndGet(), key, data)
 //            0xD8 -> d8(serialIncrementAndGet(), key)
 //            0xD9 -> d9(serialIncrementAndGet(), key, data)

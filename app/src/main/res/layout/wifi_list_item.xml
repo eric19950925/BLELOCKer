@@ -6,7 +6,7 @@
     android:layout_height="50dp">
 
     <TextView
-        android:id="@+id/tv_wifi_name"
+        android:id="@+id/tvWifiName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textStyle="bold"
@@ -14,6 +14,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        android:textColor="@color/primary"
         tools:text="鎖體安裝" />
 
     <ImageView

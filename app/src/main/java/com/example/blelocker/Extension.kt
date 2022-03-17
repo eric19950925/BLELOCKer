@@ -1,5 +1,6 @@
 package com.example.blelocker
 
+import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +23,17 @@ fun hexToBytes(hexString: String): ByteArray? {
         rawData[i] = value.toByte()
     }
     return rawData
+}
+fun View.gone() {
+    this.visibility = View.GONE
+}
+
+fun View.invisible() {
+    this.visibility = View.INVISIBLE
+}
+
+fun View.visible() {
+    this.visibility = View.VISIBLE
 }
 
 inline fun <T : Any> createSimpleAdapter(

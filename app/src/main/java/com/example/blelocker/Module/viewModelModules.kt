@@ -2,6 +2,7 @@ package com.example.blelocker
 
 import android.app.Application
 import androidx.room.Room
+import com.amazonaws.mobileconnectors.iot.AWSIotMqttManager
 import com.example.blelocker.BluetoothUtils.BleCmdRepository
 import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.example.blelocker.BluetoothUtils.BleConnectUseCase
@@ -11,6 +12,7 @@ import com.example.blelocker.Model.LockConnInfoDatabase
 import com.example.blelocker.Model.LockConnInfoRepository
 import com.example.blelocker.View.AddLock.AddAdminCodeViewModel
 import com.example.blelocker.View.AddLock.AdminCodeUseCase
+import com.example.blelocker.View.LockSettingUseCase
 import com.example.blelocker.View.Settings.AutoUnLock.AutoUnlockService
 import com.example.blelocker.View.Settings.AutoUnLock.GeofencingViewModel
 import org.koin.android.ext.koin.androidApplication
@@ -18,9 +20,11 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import com.polidea.rxandroidble2.RxBleClient
+import java.util.*
 
 val cognitoModule = module {
-    viewModel { CognitoControlViewModel(androidContext()/*,get()*/) }
+    single { AWSIotMqttManager(UUID.randomUUID().toString(), CognitoControlViewModel.AWS_IOT_CORE_END_POINT) }
+    viewModel { CognitoControlViewModel(androidContext(),get()) }
 }
 
 val bluetoothModule = module {
@@ -67,6 +71,8 @@ val viewModelModules = module {
     // ViewModel for One Lock View
 
     viewModel { OneLockViewModel(get()) }
+    single { LockSettingUseCase(get()) }
+    viewModel { HomeViewModel(get()) }
     single { AdminCodeUseCase(get()) }
     viewModel { AddAdminCodeViewModel(get(),get()) }
 

@@ -5,11 +5,21 @@ import android.content.DialogInterface
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import java.util.*
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.widget.ImageView
+
+import androidx.palette.graphics.Palette
+import com.google.android.material.navigation.NavigationView
+import androidx.palette.graphics.Palette.PaletteAsyncListener
+import com.example.blelocker.Exception.drawableToBitmap
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -30,12 +40,49 @@ class MainActivity : AppCompatActivity() {
     }
     private var disconnectDialog: AlertDialog? = null
 
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var tvUserName: TextView
+    private lateinit var navView: NavigationView
+    private lateinit var ivUser: ImageView
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         getSupportActionBar()?.hide()
         initDisconnectedDialog()
+        drawerLayout = findViewById(R.id.drawer_layout)
+        tvUserName = findViewById(R.id.tvUserName)
+        navView = findViewById(R.id.nav_view)
+        ivUser = findViewById(R.id.ivUser)
+    }
+
+    fun controlDrawer(){
+        if (this.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            this.drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            this.drawerLayout.openDrawer(GravityCompat.START)
+        }
+    }
+
+    fun setUserName(name: String){
+        tvUserName.text = name
+    }
+
+    fun setPaletteColor(id: Int){
+        ivUser.setImageResource(id)
+        val mBitmap = drawableToBitmap(this.getDrawable(id)?:return)
+        Palette.from(mBitmap).maximumColorCount(12)
+            .generate(PaletteAsyncListener { palette ->
+                // Get the "vibrant" color swatch based on the bitmap
+                val vibrant = palette!!.lightVibrantSwatch
+                if (vibrant != null) {
+                    // Set the background color of a layout based on the vibrant color
+                    navView.setBackgroundColor(vibrant.rgb)
+                    // Update the title TextView with the proper text color
+                    tvUserName.setTextColor(vibrant.rgb)
+                }
+            })
     }
 
     override fun onSupportNavigateUp(): Boolean {

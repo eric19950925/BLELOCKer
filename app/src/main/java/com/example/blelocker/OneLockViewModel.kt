@@ -34,9 +34,10 @@ class OneLockViewModel(private val repository: LockConnInfoRepository): ViewMode
         repository.deleteOneLock(lockConnectionInformation)
     }
 
-    fun getLockInfo(macAddress: String) = viewModelScope.launch {
+    fun getLockInfo(macAddress: String, function: () -> Unit) = viewModelScope.launch {
         mLockConnectionInfo.value =
             repository.getLockConnectInformation(macAddress)//pass by allLocks page
+        function.invoke()
     }
 
     fun updateLockConnectInformation(lockConnectionInformation: LockConnectionInformation) =

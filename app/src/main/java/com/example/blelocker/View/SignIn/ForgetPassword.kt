@@ -1,37 +1,30 @@
 package com.example.blelocker.View.SignIn
 
 import android.content.DialogInterface
-import android.widget.EditText
-import android.widget.Toast
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.Navigation
-import com.amazonaws.AmazonClientException
-import com.amazonaws.mobileconnectors.cognitoidentityprovider.exceptions.CognitoParameterInvalidException
-import com.amazonaws.services.cognitoidentityprovider.model.NotAuthorizedException
-import com.amazonaws.services.cognitoidentityprovider.model.UserNotFoundException
+import androidx.viewbinding.ViewBinding
 import com.example.blelocker.BaseFragment
 import com.example.blelocker.CognitoUtils.CognitoControlViewModel
-import com.example.blelocker.CognitoUtils.IdentityRequest
 import com.example.blelocker.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.android.synthetic.main.fragment_forget_password.*
-import kotlinx.android.synthetic.main.fragment_login.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+//import kotlinx.android.synthetic.main.fragment_forget_password.*
+//import kotlinx.android.synthetic.main.fragment_login.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
-import java.net.UnknownHostException
 
 class ForgetPassword: BaseFragment() {
     private val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
     private var VerificationCodeDialog: AlertDialog? = null
     override fun getLayoutRes()= R.layout.fragment_forget_password
-
+    override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
+        return null
+    }
     override fun onViewHasCreated() {
-        btnSubmit.setOnClickListener {
-            if(etPass.text.toString() != etRepeatPass.text.toString())return@setOnClickListener
-            handleNewPassWord()
-        }
+//        btnSubmit.setOnClickListener {
+//            if(etPass.text.toString() != etRepeatPass.text.toString())return@setOnClickListener
+//            handleNewPassWord()
+//        }
     }
 
     override fun onBackPressed() {
@@ -39,6 +32,7 @@ class ForgetPassword: BaseFragment() {
     }
 
     private fun handleNewPassWord(){
+        /*
         cognitoViewModel.forgotPasswordInBackground(cognitoViewModel.mUserID.value, etPass.text.toString())
         { identityRequest, map, IdentityResponse ->
             when(identityRequest) {
@@ -103,6 +97,8 @@ class ForgetPassword: BaseFragment() {
                 }
             }
         }
+
+         */
     }
 
     private fun showErrorDialog() {

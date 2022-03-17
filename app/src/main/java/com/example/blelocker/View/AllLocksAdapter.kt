@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.blelocker.R
 import com.example.blelocker.Entity.LockConnectionInformation
-import kotlinx.android.synthetic.main.alllocks_recyclerview_item.view.*
 
 class AllLocksAdapter(private val onClickListener: OnClickListener) : ListAdapter<LockConnectionInformation, AllLocksAdapter.AllLocksHolder>(LockComparator()) {
 
@@ -30,8 +29,8 @@ class AllLocksAdapter(private val onClickListener: OnClickListener) : ListAdapte
     class AllLocksHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         fun bind(lockConnectionInformation: LockConnectionInformation){
-            itemView.tv_my_lock_mac.text = lockConnectionInformation.macAddress
-            itemView.tv_my_lock_tk.text = lockConnectionInformation.permanentToken
+//            itemView.tv_my_lock_mac.text = lockConnectionInformation.macAddress
+//            itemView.tv_my_lock_tk.text = lockConnectionInformation.permanentToken
         }
     }
     class LockComparator : DiffUtil.ItemCallback<LockConnectionInformation>() {

@@ -3,27 +3,29 @@ package com.example.blelocker.View.AddLock
 import android.content.Intent
 import android.util.Base64
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.navigation.Navigation
+import androidx.viewbinding.ViewBinding
 import com.example.blelocker.*
 import com.example.blelocker.Entity.LockConnectionInformation
-import com.google.zxing.integration.android.IntentIntegrator
+import com.example.blelocker.databinding.FragmentScanBinding
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 import kotlin.random.Random
 import com.google.gson.JsonParser
-import org.koin.androidx.viewmodel.ext.android.viewModel
 import com.google.zxing.ResultPoint
 import com.journeyapps.barcodescanner.BarcodeCallback
 import com.journeyapps.barcodescanner.BarcodeResult
 import com.journeyapps.barcodescanner.camera.CameraSettings
 import io.reactivex.disposables.Disposable
 import io.reactivex.subjects.PublishSubject
-import kotlinx.android.synthetic.main.fragment_scan.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 class ScanFragment: BaseFragment() {
-    override fun getLayoutRes(): Int = R.layout.fragment_scan
+    override fun getLayoutRes(): Int? = null
+    private lateinit var currentBinding: FragmentScanBinding
     val oneLockViewModel by sharedViewModel<OneLockViewModel>()
     private lateinit var mQrResultLauncher : ActivityResultLauncher<Intent>
     var mQRcode: String?=null
@@ -37,10 +39,10 @@ class ScanFragment: BaseFragment() {
         super.onResume()
         val cameraSettings = CameraSettings()
         cameraSettings.requestedCameraId = 0
-        scanner.barcodeView.cameraSettings = cameraSettings
-        scanner.resume()
-        scanner.setStatusText("")
-        scanner.decodeSingle(object : BarcodeCallback {
+        currentBinding.scanner.barcodeView.cameraSettings = cameraSettings
+        currentBinding.scanner.resume()
+        currentBinding.scanner.setStatusText("")
+        currentBinding.scanner.decodeSingle(object : BarcodeCallback {
             override fun barcodeResult(result: BarcodeResult?) {
                 result?.text?.let { scanString ->
                     try {
@@ -57,6 +59,11 @@ class ScanFragment: BaseFragment() {
         })
     }
 
+    override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding {
+        currentBinding = FragmentScanBinding.inflate(inflater, container, false)
+        return currentBinding
+    }
+
     override fun onViewHasCreated() {
         scanResultDisposable?.isDisposed
         scanResultDisposable = scanResultSubject
@@ -68,10 +75,11 @@ class ScanFragment: BaseFragment() {
             }.subscribe()
     }
 
+
     override fun onDestroyView() {
         super.onDestroyView()
         scanResultDisposable?.dispose()
-        scanner.pause()
+//        scanner.pause()
     }
 
     override fun onBackPressed() {

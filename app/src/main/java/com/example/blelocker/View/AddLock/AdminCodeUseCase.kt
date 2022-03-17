@@ -1,6 +1,7 @@
 package com.example.blelocker.View.AddLock
 
 import android.util.Base64
+import android.util.Log
 import com.example.blelocker.BluetoothUtils.BleCmdRepository
 import com.example.blelocker.Entity.LockConnectionInformation
 import com.example.blelocker.MainActivity
@@ -16,7 +17,13 @@ class AdminCodeUseCase (private val mBleCmdRepository: BleCmdRepository){
         code: String,
         rxBleConnection: RxBleConnection
     ): Observable<Boolean> {
-        val adminCode = mBleCmdRepository.stringCodeToHex(code)
+        //if not catch will crash!!
+        var adminCode = byteArrayOf()
+        try{
+            adminCode = mBleCmdRepository.stringCodeToHex(code)
+        }catch (e: Exception){
+            Log.d("TAG",e.toString())
+        }
         return Observable.zip(
             rxBleConnection
             .setupNotification(

@@ -5,15 +5,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.viewbinding.ViewBinding
 
 abstract class BaseFragment: Fragment() {
-    protected abstract fun getLayoutRes(): Int
+    protected abstract fun getLayoutRes(): Int?
+
+    protected abstract fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding?
+    private var _binding:ViewBinding?= null
+    private val binding get() = _binding
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(getLayoutRes(), container, false)
+        _binding = getLayoutBinding(inflater,container)
+        return binding?.root
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -24,6 +31,12 @@ abstract class BaseFragment: Fragment() {
 //        }
 //        Log.d("TAG","onViewCreated")
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
     abstract fun onViewHasCreated()
     abstract fun onBackPressed()
 //    private val backPressedDispatcher = object : OnBackPressedCallback(true) {
