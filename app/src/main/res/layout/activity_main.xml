@@ -57,6 +57,7 @@
                     android:layout_height="wrap_content"/>
             </LinearLayout>
             <TextView
+                android:id="@+id/tvHelp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/primary"
@@ -69,5 +70,66 @@
                 />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.navigation.NavigationView>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/loadingView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/white"
+        android:clickable="true"
+        android:visibility="gone"
+        android:alpha="0.7"
+        android:focusable="true">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="horizontal"
+                >
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardOne"
+                    android:layout_width="@dimen/dp_20"
+                    android:layout_height="@dimen/dp_20"
+                    android:layout_gravity="center_vertical"
+                    android:backgroundTint="@color/primary"
+                    android:layout_margin="@dimen/dp_5"
+                    app:cardCornerRadius="@dimen/dp_20"
+                    />
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardTwo"
+                    android:layout_width="@dimen/dp_20"
+                    android:layout_height="@dimen/dp_20"
+                    android:layout_margin="@dimen/dp_5"
+                    android:layout_gravity="center_vertical"
+                    android:backgroundTint="@color/primary"
+                    app:cardCornerRadius="@dimen/dp_20"
+                    />
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardThree"
+                    android:layout_width="@dimen/dp_20"
+                    android:layout_height="@dimen/dp_20"
+                    android:layout_margin="@dimen/dp_5"
+                    android:layout_gravity="center_vertical"
+                    android:backgroundTint="@color/primary"
+                    app:cardCornerRadius="@dimen/dp_20"
+                    />
+            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Loading..."
+                android:layout_gravity="center_horizontal"
+                style="@style/styleText"/>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.drawerlayout.widget.DrawerLayout>

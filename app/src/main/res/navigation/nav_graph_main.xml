@@ -92,9 +92,7 @@
         <action
             android:id="@+id/action_alllocks_to_scan"
             app:destination="@id/add_lock_graph" />
-        <action
-            android:id="@+id/action_alllocks_to_account"
-            app:destination="@id/accountFragment" />
+
         <action
             android:id="@+id/action_to_onelock"
             app:destination="@id/one_lock_Fragment" />
@@ -104,6 +102,9 @@
         <action
             android:id="@+id/action_alllocks_to_autolock"
             app:destination="@id/autoUnlock_Fragment" />
+        <action
+            android:id="@+id/action_home_Fragment_to_github_Fragment"
+            app:destination="@id/github_Fragment" />
     </fragment>
     <fragment
         android:id="@+id/forgetPassword"
@@ -126,13 +127,6 @@
             android:id="@+id/action_welcome_to_login_Fragment"
             app:destination="@id/login_Fragment" />
     </fragment>
-    <fragment
-        android:id="@+id/accountFragment"
-        android:name="com.example.blelocker.View.account.AccountFragment"
-        android:label="AccountFragment" >
-        <action
-            android:id="@+id/action_accountFragment_to_github_Fragment"
-            app:destination="@id/github_Fragment" />
-    </fragment>
+
 
 </navigation>

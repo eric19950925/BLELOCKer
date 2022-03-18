@@ -22,7 +22,7 @@
         app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/github"
-        android:icon="@drawable/ic_github"
+        android:icon="@drawable/ic_account"
         android:title="github"
         android:visible="false"
         app:showAsAction="ifRoom"/>

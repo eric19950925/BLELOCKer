@@ -1,10 +1,13 @@
 package com.example.blelocker
 
+import android.animation.AnimatorInflater
+import android.animation.AnimatorInflater.loadAnimator
 import android.app.PendingIntent
 import android.content.DialogInterface
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.GravityCompat
@@ -14,11 +17,21 @@ import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.widget.ImageView
+import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
 
 import androidx.palette.graphics.Palette
 import com.google.android.material.navigation.NavigationView
 import androidx.palette.graphics.Palette.PaletteAsyncListener
 import com.example.blelocker.Exception.drawableToBitmap
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
+import android.view.animation.Transformation
+import kotlinx.coroutines.delay
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
+import androidx.vectordrawable.graphics.drawable.AnimatorInflaterCompat.loadAnimator
+
 
 
 class MainActivity : AppCompatActivity() {
@@ -42,8 +55,16 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var tvUserName: TextView
+    private lateinit var tvHelp: TextView
     private lateinit var navView: NavigationView
     private lateinit var ivUser: ImageView
+    private lateinit var mLoadingView: ConstraintLayout
+    private lateinit var mPoint1: CardView
+    private lateinit var mPoint2: CardView
+    private lateinit var mPoint3: CardView
+    private lateinit var animator: ObjectAnimator
+    private lateinit var animator2: ObjectAnimator
+    private lateinit var animator3: ObjectAnimator
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,8 +74,13 @@ class MainActivity : AppCompatActivity() {
         initDisconnectedDialog()
         drawerLayout = findViewById(R.id.drawer_layout)
         tvUserName = findViewById(R.id.tvUserName)
+        tvHelp = findViewById(R.id.tvHelp)
         navView = findViewById(R.id.nav_view)
         ivUser = findViewById(R.id.ivUser)
+        mLoadingView = findViewById(R.id.loadingView)
+        mPoint1 = findViewById(R.id.cardOne)
+        mPoint2 = findViewById(R.id.cardTwo)
+        mPoint3 = findViewById(R.id.cardThree)
     }
 
     fun controlDrawer(){
@@ -69,6 +95,40 @@ class MainActivity : AppCompatActivity() {
         tvUserName.text = name
     }
 
+    fun showLoadingView(){
+        mLoadingView.visibility = View.VISIBLE
+
+
+//        animator = AnimatorInflater.loadAnimator(this, R.animator.alpha) as ObjectAnimator
+//        animator.target = mPoint1
+
+        animator = ObjectAnimator.ofFloat(mPoint1, "alpha", 1f, 0f)
+        animator.repeatMode = ObjectAnimator.REVERSE
+        animator.duration = 800
+        animator.repeatCount = ObjectAnimator.INFINITE
+        animator.start()
+        animator2 = ObjectAnimator.ofFloat(mPoint2, "alpha", 1f, 0f)
+        animator2.repeatCount = ObjectAnimator.INFINITE
+        animator2.duration = 800
+        animator2.repeatMode = ObjectAnimator.REVERSE
+        animator2.startDelay = 200
+        animator2.start()
+        animator3 = ObjectAnimator.ofFloat(mPoint3, "alpha", 1f, 0f)
+        animator3.repeatCount = ObjectAnimator.INFINITE
+        animator3.duration = 800
+        animator3.repeatMode = ObjectAnimator.REVERSE
+        animator3.startDelay = 400
+        animator3.start()
+
+    }
+
+    fun hideLoadingView(){
+        mLoadingView.visibility = View.GONE
+        animator.cancel()
+        animator2.cancel()
+        animator3.cancel()
+    }
+
     fun setPaletteColor(id: Int){
         ivUser.setImageResource(id)
         val mBitmap = drawableToBitmap(this.getDrawable(id)?:return)
@@ -81,6 +141,7 @@ class MainActivity : AppCompatActivity() {
                     navView.setBackgroundColor(vibrant.rgb)
                     // Update the title TextView with the proper text color
                     tvUserName.setTextColor(vibrant.rgb)
+                    tvHelp.setTextColor(vibrant.rgb)
                 }
             })
     }

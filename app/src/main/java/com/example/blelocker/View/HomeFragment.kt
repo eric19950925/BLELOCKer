@@ -27,6 +27,8 @@ import com.example.blelocker.CognitoUtils.LogOutRequest.*
 import com.example.blelocker.Entity.*
 import com.example.blelocker.databinding.FragmentAllLocksBinding
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -41,7 +43,7 @@ class HomeFragment : BaseFragment(){
     private val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
     private lateinit var mSharedPreferences: SharedPreferences
     var count = 0
-
+    private var loadingScope: Job? = null
     private lateinit var currentBinding: FragmentAllLocksBinding
     override fun getLayoutRes(): Int? = null
 
@@ -57,6 +59,7 @@ class HomeFragment : BaseFragment(){
         currentBinding.myToolbar.inflateMenu(R.menu.my_menu)
         currentBinding.myToolbar.menu.findItem(R.id.github).isVisible = true
         currentBinding.myToolbar.menu.findItem(R.id.play).isVisible = false
+        currentBinding.myToolbar.menu.findItem(R.id.delete).isVisible = false
         currentBinding.myToolbar.setNavigationIcon(R.drawable.ic_baseline_menu_24)
         currentBinding.myToolbar.title = ""
 
@@ -79,7 +82,7 @@ class HomeFragment : BaseFragment(){
                     true
                 }
                 R.id.github -> {
-                    Navigation.findNavController(requireView()).navigate(R.id.action_alllocks_to_account)
+                    Navigation.findNavController(requireView()).navigate(R.id.action_home_Fragment_to_github_Fragment)
                     true
                 }
                 R.id.delete -> {
@@ -99,6 +102,7 @@ class HomeFragment : BaseFragment(){
 
         oneLockViewModel.isPowerOn.observe(this){ power ->
             currentBinding.tvPower.text = if(power)"On" else "Off"
+            loadingScope?.cancel()
         }
 
         cognitoViewModel.mMqttStatus.observe(this){ status ->
@@ -368,8 +372,21 @@ class HomeFragment : BaseFragment(){
         }
         Log.d("TAG","getUserStatus")
         //loading... todo
+        loadingScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+            (requireActivity() as MainActivity).showLoadingView()
+            try{
+                var mTimestamp = 0
+                while(mTimestamp < 60) {
+                    delay(1000)
+                    mTimestamp += 1
+                }
+            }finally {
+                (requireActivity() as MainActivity).hideLoadingView()
+            }
+        }
         cognitoViewModel.getUserDetails(
             onFailure = {
+                loadingScope?.cancel()
                 viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
                     val navHostFragment = (activity as MainActivity).supportFragmentManager.findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment
                     navHostFragment.navController.navigate(R.id.action_to_login)

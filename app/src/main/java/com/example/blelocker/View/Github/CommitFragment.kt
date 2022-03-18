@@ -2,27 +2,38 @@ package com.example.blelocker.View.Github
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewbinding.ViewBinding
 import com.example.blelocker.BaseFragment
 import com.example.blelocker.GithubViewModel
+import com.example.blelocker.MainActivity
 import com.example.blelocker.R
+import com.example.blelocker.databinding.FragmentCommitsBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 class CommitFragment: BaseFragment() {
     private val githubViewModel by sharedViewModel<GithubViewModel>()
     override fun getLayoutRes(): Int = R.layout.fragment_commits
+    private var loadingScope: Job? = null
+    private lateinit var currentBinding: FragmentCommitsBinding
     override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
-        return null
+        currentBinding = FragmentCommitsBinding.inflate(inflater, container, false)
+        return currentBinding
     }
     override fun onViewHasCreated() {
         setHasOptionsMenu(true)
-//        my_toolbar.menu.clear()
-//        my_toolbar.inflateMenu(R.menu.my_menu)
-//        my_toolbar.menu.findItem(R.id.github).isVisible = true
-//        my_toolbar.menu.findItem(R.id.scan).isVisible = false
-//        my_toolbar.menu.findItem(R.id.play).isVisible = false
-//        my_toolbar.menu.findItem(R.id.delete).isVisible = false
-//        my_toolbar.title = "Commits"
+        currentBinding.myToolbar.menu.clear()
+        currentBinding.myToolbar.inflateMenu(R.menu.my_menu)
+        currentBinding.myToolbar.menu.findItem(R.id.github).isVisible = true
+        currentBinding.myToolbar.menu.findItem(R.id.scan).isVisible = false
+        currentBinding.myToolbar.menu.findItem(R.id.play).isVisible = false
+        currentBinding.myToolbar.menu.findItem(R.id.delete).isVisible = false
+        currentBinding.myToolbar.title = "Commits"
 
 
         val adapter = CommitsAdapter(
@@ -33,15 +44,38 @@ class CommitFragment: BaseFragment() {
             }
         )
 
-//        recyclerview.adapter = adapter
-//        recyclerview.layoutManager = LinearLayoutManager(requireContext())
+        currentBinding.recyclerview.adapter = adapter
+        currentBinding.recyclerview.layoutManager = LinearLayoutManager(requireContext())
 
 
         githubViewModel.mCommits.observe(this){
             adapter.submitList(it)
+            loadingScope?.cancel()
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        loadingScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+            try{
+                (requireActivity() as MainActivity).showLoadingView()
+                var mTimestamp = 0
+                while(mTimestamp < 60) {
+                    delay(1000)
+                    mTimestamp += 1
+                }
+            }finally {
+                (requireActivity() as MainActivity).hideLoadingView()
+            }
+        }
+        githubViewModel.fetchData()
+    }
+
     override fun onBackPressed() {
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        githubViewModel.mCommits.value = null
     }
 }
