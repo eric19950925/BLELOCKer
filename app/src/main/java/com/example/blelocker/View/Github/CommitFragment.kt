@@ -29,7 +29,7 @@ class CommitFragment: BaseFragment() {
         setHasOptionsMenu(true)
         currentBinding.myToolbar.menu.clear()
         currentBinding.myToolbar.inflateMenu(R.menu.my_menu)
-        currentBinding.myToolbar.menu.findItem(R.id.github).isVisible = true
+        currentBinding.myToolbar.menu.findItem(R.id.github).isVisible = false
         currentBinding.myToolbar.menu.findItem(R.id.scan).isVisible = false
         currentBinding.myToolbar.menu.findItem(R.id.play).isVisible = false
         currentBinding.myToolbar.menu.findItem(R.id.delete).isVisible = false

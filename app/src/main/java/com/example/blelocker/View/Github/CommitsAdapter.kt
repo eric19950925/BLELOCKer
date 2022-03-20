@@ -16,7 +16,7 @@ class CommitsAdapter(private val onClickListener: OnClickListener) : ListAdapter
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CommitsHolder {
-        val binding = CommitsRecyclerviewItemBinding.inflate(LayoutInflater.from(parent.context))
+        val binding = CommitsRecyclerviewItemBinding.inflate(LayoutInflater.from(parent.context), parent,false)
         return CommitsHolder(binding)
     }
 

@@ -409,7 +409,9 @@ class HomeFragment : BaseFragment(){
         tfhApiViewModel.subPubGetClassicShadow(cognitoViewModel.mqttManager?:return){
             updateShadowPower(it)
             //正確顯示狀態後才能開始操作
-            currentBinding.btnSubpubUpdate.isClickable = true
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
+                currentBinding.btnSubpubUpdate.isClickable = true
+            }
         }
     }
 }
