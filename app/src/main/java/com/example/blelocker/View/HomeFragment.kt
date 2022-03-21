@@ -11,7 +11,6 @@ import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
@@ -25,7 +24,7 @@ import com.example.blelocker.BluetoothUtils.BleControlViewModel
 import com.example.blelocker.CognitoUtils.CognitoControlViewModel
 import com.example.blelocker.CognitoUtils.LogOutRequest.*
 import com.example.blelocker.Entity.*
-import com.example.blelocker.databinding.FragmentAllLocksBinding
+import com.example.blelocker.databinding.FragmentHomeBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -44,11 +43,11 @@ class HomeFragment : BaseFragment(){
     private lateinit var mSharedPreferences: SharedPreferences
     var count = 0
     private var loadingScope: Job? = null
-    private lateinit var currentBinding: FragmentAllLocksBinding
+    private lateinit var currentBinding: FragmentHomeBinding
     override fun getLayoutRes(): Int? = null
 
     override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
-        currentBinding = FragmentAllLocksBinding.inflate(inflater, container, false)
+        currentBinding = FragmentHomeBinding.inflate(inflater, container, false)
         return currentBinding
     }
 
@@ -82,7 +81,7 @@ class HomeFragment : BaseFragment(){
                     true
                 }
                 R.id.github -> {
-                    Navigation.findNavController(requireView()).navigate(R.id.action_home_Fragment_to_github_Fragment)
+                    Navigation.findNavController(requireView()).navigate(R.id.action_home_Fragment_to_account_Fragment)
                     true
                 }
                 R.id.delete -> {
@@ -125,10 +124,6 @@ class HomeFragment : BaseFragment(){
             }
         }
 
-        currentBinding.btnLogout.setOnClickListener {
-            logOut()
-        }
-
         currentBinding.btnAutoUnlock.setOnClickListener {
             Navigation.findNavController(requireView()).navigate(R.id.action_alllocks_to_autolock)
         }
@@ -148,42 +143,6 @@ class HomeFragment : BaseFragment(){
 
         }
 
-        currentBinding.btnDeleteUser.setOnClickListener {
-            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
-                cognitoViewModel.LogOut { LogOutRequest ->
-                    when(LogOutRequest){
-                        SUCCESS -> {
-                            tfhApiViewModel.subPubUserDelete(
-                                cognitoViewModel.mqttManager?:return@LogOut,
-                                cognitoViewModel.mIdentityPoolId.value?:return@LogOut,
-                                cognitoViewModel.mJwtToken.value?:return@LogOut
-                            ){ response ->
-                                Log.d("TAG", "response: $response")
-                                when(response){
-                                    "AAA" -> {
-                                        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                                            cognitoViewModel.closeCognitoCache()
-                                            val navHostFragment = (activity as MainActivity).supportFragmentManager.findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment
-                                            navHostFragment.navController.navigate(R.id.action_to_login)
-                                        }
-                                    }
-                                    else -> {
-                                        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
-                                            Log.d("TAG",response)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        FAILURE -> {
-                            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                                Toast.makeText(requireContext(), "Log out Failure", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
-                }
-            }
-        }
         setupBackPressedCallback()
     }
 
@@ -276,25 +235,6 @@ class HomeFragment : BaseFragment(){
         oneLockViewModel.isPowerOn.value = power
     }
 
-    private fun logOut()= viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
-        cognitoViewModel.LogOut { LogOutRequest ->
-            when(LogOutRequest){
-                SUCCESS -> {
-                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                        val navHostFragment = (activity as MainActivity).supportFragmentManager.findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment
-                        navHostFragment.navController.navigate(R.id.action_to_login)
-                    }
-//                    Navigation.findNavController(requireView()).navigate(R.id.action_to_login)
-//                    Toast.makeText(requireContext(), "Log out Success", Toast.LENGTH_LONG).show()
-                }
-                FAILURE -> {
-                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                        Toast.makeText(requireContext(), "Log out Failure", Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-        }
-    }
     private fun saveCurrentLockMac(macAddress: String) {
         mSharedPreferences = requireActivity().getSharedPreferences(MainActivity.DATA, 0)
         mSharedPreferences.edit()

@@ -6,7 +6,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.viewbinding.ViewBinding
 import com.example.blelocker.BaseFragment
-import com.example.blelocker.GithubViewModel
+import com.example.blelocker.AccountViewModel
 import com.example.blelocker.MainActivity
 import com.example.blelocker.R
 import com.example.blelocker.databinding.FragmentCommitsBinding
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 class CommitFragment: BaseFragment() {
-    private val githubViewModel by sharedViewModel<GithubViewModel>()
+    private val githubViewModel by sharedViewModel<AccountViewModel>()
     override fun getLayoutRes(): Int = R.layout.fragment_commits
     private var loadingScope: Job? = null
     private lateinit var currentBinding: FragmentCommitsBinding

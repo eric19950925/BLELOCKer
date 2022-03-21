@@ -42,5 +42,5 @@ val GithubModule = module {
 
     single { GithubRepository(get()) }
 
-    viewModel { GithubViewModel(get()) }
+    viewModel { AccountViewModel(get()) }
 }

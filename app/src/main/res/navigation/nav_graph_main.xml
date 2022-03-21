@@ -71,11 +71,13 @@
     </fragment>
 
     <fragment
-        android:id="@+id/github_Fragment"
-        android:name="com.example.blelocker.View.Github.GithubFragment"
-        tools:layout="@layout/fragment_git_hub">
+        android:id="@+id/account_Fragment"
+        android:name="com.example.blelocker.View.Github.AccountFragment"
+        tools:layout="@layout/fragment_account">
         <action
             android:id="@+id/action_to_commits"
+            app:enterAnim="@anim/slide_in_right"
+            app:popExitAnim="@anim/slide_out_right"
             app:destination="@id/commit_Fragment" />
     </fragment>
 
@@ -88,7 +90,7 @@
     <fragment
         android:id="@+id/home_Fragment"
         android:name="com.example.blelocker.View.HomeFragment"
-        tools:layout="@layout/fragment_all_locks">
+        tools:layout="@layout/fragment_home">
         <action
             android:id="@+id/action_alllocks_to_scan"
             app:destination="@id/add_lock_graph" />
@@ -103,8 +105,10 @@
             android:id="@+id/action_alllocks_to_autolock"
             app:destination="@id/autoUnlock_Fragment" />
         <action
-            android:id="@+id/action_home_Fragment_to_github_Fragment"
-            app:destination="@id/github_Fragment" />
+            android:id="@+id/action_home_Fragment_to_account_Fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:popExitAnim="@anim/slide_out_right"
+            app:destination="@id/account_Fragment" />
     </fragment>
     <fragment
         android:id="@+id/forgetPassword"
@@ -126,6 +130,9 @@
         <action
             android:id="@+id/action_welcome_to_login_Fragment"
             app:destination="@id/login_Fragment" />
+        <action
+            android:id="@+id/action_welcome_to_home_Fragment"
+            app:destination="@id/home_Fragment" />
     </fragment>
 
 

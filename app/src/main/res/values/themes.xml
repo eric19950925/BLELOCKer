@@ -21,6 +21,12 @@
 
         <item name="colorOnSurface">@color/md_theme_light_onSurface</item>
 
+        <!-- make status bar transparent when navigation bar is on -->
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <!-- make bottom bar transparent-->
+        <item name="android:navigationBarColor">@color/white</item>
+
     </style>
     <style name="styleText" parent="android:TextAppearance">
         <item name="android:textColor">@color/md_theme_light_onPrimary</item>

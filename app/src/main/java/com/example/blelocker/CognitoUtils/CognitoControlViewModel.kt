@@ -205,7 +205,9 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
     fun initLogin(userId: String?, handler: IdentityHandler){
         try{
             userID = userId
-            currentUser.value = userPool?.getUser(userId)
+            viewModelScope.launch(Dispatchers.Main) {
+                currentUser.value = userPool?.getUser(userId)
+            }
             currentUser.value?.getSessionInBackground(object : AuthenticationHandler{
                 override fun onSuccess(
                     userSession: CognitoUserSession?,
@@ -258,7 +260,42 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
             })
 
         }catch (exception: Exception){
-            handleFailure(handler, "Validation error")
+            handleFailure(handler, exception.toString())
+        }
+    }
+
+    fun autoLogin(userId: String?, handler: IdentityHandler){
+        try{
+            userID = userId
+            viewModelScope.launch(Dispatchers.Main) {
+                currentUser.value = userPool?.getUser(userId)
+            }
+            userPool?.getUser(userId)?.getSession(object : AuthenticationHandler{
+                override fun onSuccess(
+                    userSession: CognitoUserSession?,
+                    newDevice: CognitoDevice?
+                ) {
+                    viewModelScope.launch {
+                        handler(IdentityRequest.SUCCESS,null) {}
+                    }
+                }
+
+                override fun getAuthenticationDetails(authenticationContinuation: AuthenticationContinuation?, userId: String?) {}
+
+                override fun getMFACode(continuation: MultiFactorAuthenticationContinuation?) {}
+
+                override fun authenticationChallenge(continuation: ChallengeContinuation?) {}
+
+                override fun onFailure(exception: Exception?) {
+                    handleFailure(handler, exception?.toString())
+                    handler(IdentityRequest.FAILURE, mapOf("exception" to exception)){}
+                }
+
+            })
+
+
+        }catch (exception: Exception){
+            handleFailure(handler, exception.toString())
         }
     }
 

@@ -2,6 +2,7 @@ package com.example.blelocker.View
 
 import android.animation.ArgbEvaluator
 import android.animation.ObjectAnimator
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,19 +11,19 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
 import androidx.viewbinding.ViewBinding
 import com.example.blelocker.BaseFragment
+import com.example.blelocker.CognitoUtils.CognitoControlViewModel
+import com.example.blelocker.CognitoUtils.IdentityRequest
 import com.example.blelocker.R
 import com.example.blelocker.databinding.FragmentCommitsBinding
-import com.example.blelocker.databinding.FragmentLoginBinding
-//import kotlinx.android.synthetic.main.fragment_all_locks.*
-//import kotlinx.android.synthetic.main.fragment_commits.*
-//import kotlinx.android.synthetic.main.fragment_commits.my_toolbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 class Welcome:BaseFragment() {
     override fun getLayoutRes(): Int = R.layout.fragment_commits
     private lateinit var currentBinding: FragmentCommitsBinding
+    private val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
     override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
         currentBinding = FragmentCommitsBinding.inflate(inflater, container, false)
         return currentBinding
@@ -40,13 +41,24 @@ class Welcome:BaseFragment() {
             ContextCompat.getColor(requireContext(), R.color.md_theme_light_onPrimary)
         )
 
-        objectAnimator.duration = 2000
+        objectAnimator.duration = 3000
         objectAnimator.start()
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-            delay(3000)
-            Navigation.findNavController(requireView()).navigate(R.id.action_welcome_to_login_Fragment)
-        }
+            delay(4000)
+
+                cognitoViewModel.autoLogin("eric_shih@sunion.com.tw"){ identityRequest, map, callback ->
+                    when(identityRequest) {
+                        IdentityRequest.SUCCESS -> {
+                            Navigation.findNavController(requireView()).navigate(R.id.action_welcome_to_home_Fragment)
+                        }
+                        else -> {
+                            Log.d("TAG","Need other info, please log in again.")
+                            Navigation.findNavController(requireView()).navigate(R.id.action_welcome_to_login_Fragment)
+                        }
+                    }
+                }
+         }
     }
 
     override fun onBackPressed() {

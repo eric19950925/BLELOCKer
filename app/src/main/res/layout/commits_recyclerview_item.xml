@@ -27,21 +27,14 @@
             android:padding="2dp"
             >
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="date"/>
-            <TextView
                 android:id="@+id/tv_commit_date"
                 style="@style/styleText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="commit msg:"/>
-            <TextView
                 android:id="@+id/tv_commit_msg"
                 style="@style/styleText"
+                android:layout_marginTop="@dimen/dp_20"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
         </LinearLayout>

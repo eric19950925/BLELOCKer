@@ -10,7 +10,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class GithubViewModel(private val repo: GithubRepository) : ViewModel(), Callback<List<GitHubCommits>> {
+class AccountViewModel(private val repo: GithubRepository) : ViewModel(), Callback<List<GitHubCommits>> {
 
     private val _loadingState = MutableLiveData<LoadingState>()
     var mCommits = MutableLiveData<List<GitHubCommits>>()

@@ -42,7 +42,6 @@ class LoginFragment: BaseFragment() {
 
     override fun onViewHasCreated() {
 
-        getDetail()
         currentBinding.btnLogin.setOnClickListener{
             handleLogin()
         }
@@ -54,32 +53,6 @@ class LoginFragment: BaseFragment() {
         }
 
 
-    }
-
-    private fun getDetail(){
-        cognitoViewModel.getUserDetails (
-            onSuccess = {
-                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
-                    Log.d("TAG",it)
-                    cognitoViewModel.initLogin(it){ identityRequest, map, callback ->
-                        when(identityRequest) {
-                            IdentityRequest.SUCCESS -> {
-                                Navigation.findNavController(requireView()).navigate(R.id.action_login_to_alllock)
-                            }
-                            else -> {
-                                Log.d("TAG","auto login failure")
-                            }
-                        }
-                    }
-                }
-            },
-            onFailure = {//todo if login failure , it can not go back to login page
-                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-//                    val navHostFragment = (activity as MainActivity).supportFragmentManager.findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment
-//                    navHostFragment.navController.navigate(R.id.action_to_login)
-                }
-            }
-        )
     }
 
     private fun handleLogin() {
