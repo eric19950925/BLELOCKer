@@ -18,7 +18,7 @@
         android:id="@+id/global_pop_inclusive_to_alllock"/>
     <fragment
         android:id="@+id/autoUnlock_Fragment"
-        android:name="com.example.blelocker.View.Settings.AutoUnLock.AutoUnLockFragment"
+        android:name="com.sunionrd.blelocker.View.Settings.AutoUnLock.AutoUnLockFragment"
         tools:layout="@layout/fragment_auto_unlock">
         <action
             android:id="@+id/back_to_setting"
@@ -29,7 +29,7 @@
     </fragment>
     <fragment
         android:id="@+id/login_Fragment"
-        android:name="com.example.blelocker.View.SignIn.LoginFragment"
+        android:name="com.sunionrd.blelocker.View.SignIn.LoginFragment"
         tools:layout="@layout/fragment_login">
         <action
             android:id="@+id/action_login_to_signup"
@@ -43,13 +43,13 @@
     </fragment>
     <fragment
         android:id="@+id/signup_Fragment"
-        android:name="com.example.blelocker.View.SignIn.SignUpFragment"
+        android:name="com.sunionrd.blelocker.View.SignIn.SignUpFragment"
         tools:layout="@layout/fragment_signup">
     </fragment>
 
     <fragment
         android:id="@+id/one_lock_Fragment"
-        android:name="com.example.blelocker.View.OneLockFragment"
+        android:name="com.sunionrd.blelocker.View.OneLockFragment"
         tools:layout="@layout/fragment_onelock">
         <action
             android:id="@+id/action_onelock_to_all"
@@ -60,7 +60,7 @@
     </fragment>
     <fragment
         android:id="@+id/setting_Fragment"
-        android:name="com.example.blelocker.View.Settings.SettingFragment"
+        android:name="com.sunionrd.blelocker.View.Settings.SettingFragment"
         tools:layout="@layout/fragment_setting">
         <action
             android:id="@+id/action_back_to_onelock"
@@ -72,7 +72,7 @@
 
     <fragment
         android:id="@+id/account_Fragment"
-        android:name="com.example.blelocker.View.Github.AccountFragment"
+        android:name="com.sunionrd.blelocker.View.account.AccountFragment"
         tools:layout="@layout/fragment_account">
         <action
             android:id="@+id/action_to_commits"
@@ -83,13 +83,13 @@
 
     <fragment
         android:id="@+id/commit_Fragment"
-        android:name="com.example.blelocker.View.Github.CommitFragment"
+        android:name="com.sunionrd.blelocker.View.account.CommitFragment"
         tools:layout="@layout/fragment_commits">
     </fragment>
 
     <fragment
         android:id="@+id/home_Fragment"
-        android:name="com.example.blelocker.View.HomeFragment"
+        android:name="com.sunionrd.blelocker.View.HomeFragment"
         tools:layout="@layout/fragment_home">
         <action
             android:id="@+id/action_alllocks_to_scan"
@@ -112,12 +112,12 @@
     </fragment>
     <fragment
         android:id="@+id/forgetPassword"
-        android:name="com.example.blelocker.View.SignIn.ForgetPassword"
+        android:name="com.sunionrd.blelocker.View.SignIn.ForgetPassword"
         android:label="ForgetPassword" >
     </fragment>
     <fragment
         android:id="@+id/enterUserId"
-        android:name="com.example.blelocker.View.SignIn.EnterUserId"
+        android:name="com.sunionrd.blelocker.View.SignIn.EnterUserId"
         android:label="EnterUserId" >
         <action
             android:id="@+id/action_enterUserId_to_forgetPassword"
@@ -125,7 +125,8 @@
     </fragment>
     <fragment
         android:id="@+id/welcome"
-        android:name="com.example.blelocker.View.Welcome"
+        android:name="com.sunionrd.blelocker.View.Welcome"
+        tools:layout="@layout/fragment_commits"
         android:label="Welcome" >
         <action
             android:id="@+id/action_welcome_to_login_Fragment"

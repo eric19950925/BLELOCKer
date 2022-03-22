@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/scanFragment"
-        android:name="com.example.blelocker.View.AddLock.ScanFragment"
+        android:name="com.sunionrd.blelocker.View.AddLock.ScanFragment"
         tools:layout="@layout/fragment_scan"
         android:label="ScanFragment" >
         <action
@@ -16,7 +16,7 @@
     </fragment>
     <fragment
         android:id="@+id/installationFragment"
-        android:name="com.example.blelocker.View.AddLock.InstallationFragment"
+        android:name="com.sunionrd.blelocker.View.AddLock.InstallationFragment"
         android:label="InstallationFragment"
         tools:layout="@layout/fragment_installation">
         <action
@@ -25,7 +25,7 @@
     </fragment>
     <fragment
         android:id="@+id/connectFragment"
-        android:name="com.example.blelocker.View.AddLock.ConnectFragment"
+        android:name="com.sunionrd.blelocker.View.AddLock.ConnectFragment"
         android:label="ConnectFragment"
         tools:layout="@layout/fragment_connect">
         <action
@@ -34,7 +34,7 @@
     </fragment>
     <fragment
         android:id="@+id/selectWifiFragment"
-        android:name="com.example.blelocker.View.AddLock.SelectWifiFragment"
+        android:name="com.sunionrd.blelocker.View.AddLock.SelectWifiFragment"
         android:label="SelectWifiFragment"
         tools:layout="@layout/fragment_select_wifi">
         <action
@@ -43,7 +43,7 @@
     </fragment>
     <fragment
         android:id="@+id/enterWifiPWFragment"
-        android:name="com.example.blelocker.View.AddLock.EnterWifiPWFragment"
+        android:name="com.sunionrd.blelocker.View.AddLock.EnterWifiPWFragment"
         android:label="EnterWifiPWFragment"
         tools:layout="@layout/fragment_enter_wifi_password">
 
@@ -53,7 +53,7 @@
     </fragment>
     <fragment
         android:id="@+id/locationIntroFragment"
-        android:name="com.example.blelocker.View.AddLock.LocationIntroFragment"
+        android:name="com.sunionrd.blelocker.View.AddLock.LocationIntroFragment"
         android:label="LocationIntroFragment"
         tools:layout="@layout/fragment_location_intro">
         <action
@@ -62,7 +62,7 @@
     </fragment>
     <fragment
         android:id="@+id/permissionRequestFragment"
-        android:name="com.example.blelocker.View.AddLock.PermissionRequestFragment"
+        android:name="com.sunionrd.blelocker.View.AddLock.PermissionRequestFragment"
         android:label="PermissionRequestFragment"
         tools:layout="@layout/fragment_permission_request">
         <action
@@ -71,12 +71,12 @@
     </fragment>
     <fragment
         android:id="@+id/locationSummaryFragment"
-        android:name="com.example.blelocker.View.AddLock.LocationSummaryFragment"
+        android:name="com.sunionrd.blelocker.View.AddLock.LocationSummaryFragment"
         android:label="LocationSummaryFragment"
         tools:layout="@layout/fragment_location_summary"/>
     <fragment
         android:id="@+id/addAdminCodeFragment"
-        android:name="com.example.blelocker.View.AddLock.AddAdminCodeFragment"
+        android:name="com.sunionrd.blelocker.View.AddLock.AddAdminCodeFragment"
         android:label="AddAdminCodeFragment"
         tools:layout="@layout/fragment_add_admin_code">
         <action

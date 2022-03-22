@@ -62,7 +62,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@+id/recyclerview"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/btnSPGetTime"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginBottom="5dp"
@@ -76,7 +76,25 @@
         android:textColor="@color/black"
         app:layout_constraintEnd_toStartOf="@+id/btnSubpubUpdate"
         app:layout_constraintTop_toTopOf="@+id/btnSubpubUpdate"/>
-
+    <Button
+        android:id="@+id/btnSPGetTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/btnSubpubUpdate"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="5dp"
+        android:text="SP Get Time"/>
+    <TextView
+        android:id="@+id/tvTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@+id/btnSPGetTime"
+        android:layout_marginEnd="20dp"
+        android:textColor="@color/black"
+        app:layout_constraintEnd_toStartOf="@+id/btnSPGetTime"
+        app:layout_constraintTop_toTopOf="@+id/btnSPGetTime"/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
