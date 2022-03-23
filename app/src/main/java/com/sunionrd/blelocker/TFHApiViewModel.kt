@@ -9,7 +9,13 @@ import com.sunionrd.blelocker.Entity.ClassicShadow
 import com.sunionrd.blelocker.Entity.TFHApiResponseMsg
 import com.sunionrd.blelocker.mTFHApiUtils.TFHApiRepository
 import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.sunionrd.blelocker.CognitoUtils.CognitoControlViewModel
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.io.IOException
 import java.io.UnsupportedEncodingException
 
 class TFHApiViewModel(private val repo: TFHApiRepository): ViewModel(){
@@ -140,4 +146,49 @@ class TFHApiViewModel(private val repo: TFHApiRepository): ViewModel(){
             AWSIotMqttQos.QOS0
         )
     }
+    fun subPubSetFCM(enable: Boolean, FCMtoken: String, jwtToken: String, callback: (response: String)-> Unit){
+
+        val client = OkHttpClient()
+        val gson = Gson()
+        val mSetNotifyPayload = SetNotifyPayload(
+            Type = 0,
+            Token = FCMtoken,
+            ApplicationID = "Sunion_20200617",
+            Enable = enable,
+            LanguageLocalisation = "en-US",
+            clientToken = "AAA"
+        )
+        val postBody = gson.toJson(mSetNotifyPayload).toString()
+        Log.d("TAG", postBody)
+        val MEDIA_TYPE_JSON = CognitoControlViewModel.CONTENT_TYPE_JSON.toMediaType()
+
+        val request = Request.Builder()
+            .url("https://api.ikey-lock.com/v1/app-notification")
+            .header("Authorization", "Bearer $jwtToken")
+            .post(postBody.toRequestBody(MEDIA_TYPE_JSON))
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.d("TAG", e.toString())
+                callback(e.toString())
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                Log.d("TAG", "response: ${response.body?.string()}")
+//                callback("response: ${response.body?.string()}")
+//                https://stackoverflow.com/questions/58094772/okhttp-response-fail-java-lang-illegalstateexception-closed
+            }
+        })
+
+    }
 }
+
+data class SetNotifyPayload(
+    val Type: Int,
+    val Token: String,
+    val ApplicationID: String,
+    val Enable: Boolean,
+    val LanguageLocalisation: String,
+    val clientToken: String
+)

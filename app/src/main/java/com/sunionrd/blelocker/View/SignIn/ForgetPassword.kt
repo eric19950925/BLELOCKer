@@ -1,30 +1,43 @@
 package com.sunionrd.blelocker.View.SignIn
 
 import android.content.DialogInterface
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
 import androidx.viewbinding.ViewBinding
+import com.amazonaws.AmazonClientException
+import com.amazonaws.mobileconnectors.cognitoidentityprovider.exceptions.CognitoParameterInvalidException
+import com.amazonaws.services.cognitoidentityprovider.model.NotAuthorizedException
+import com.amazonaws.services.cognitoidentityprovider.model.UserNotFoundException
 import com.sunionrd.blelocker.BaseFragment
 import com.sunionrd.blelocker.CognitoUtils.CognitoControlViewModel
 import com.sunionrd.blelocker.R
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-//import kotlinx.android.synthetic.main.fragment_forget_password.*
-//import kotlinx.android.synthetic.main.fragment_login.*
+import com.sunionrd.blelocker.CognitoUtils.IdentityRequest
+import com.sunionrd.blelocker.databinding.FragmentForgetPasswordBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
+import java.net.UnknownHostException
 
 class ForgetPassword: BaseFragment() {
     private val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
     private var VerificationCodeDialog: AlertDialog? = null
     override fun getLayoutRes()= R.layout.fragment_forget_password
+    private lateinit var currentBinding: FragmentForgetPasswordBinding
     override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
-        return null
+        currentBinding = FragmentForgetPasswordBinding.inflate(inflater, container, false)
+        return currentBinding
     }
     override fun onViewHasCreated() {
-//        btnSubmit.setOnClickListener {
-//            if(etPass.text.toString() != etRepeatPass.text.toString())return@setOnClickListener
-//            handleNewPassWord()
-//        }
+        currentBinding.btnSubmit.setOnClickListener {
+            if(currentBinding.etPass.getText() != currentBinding.etRepeatPass.getText())return@setOnClickListener
+            handleNewPassWord()
+        }
     }
 
     override fun onBackPressed() {
@@ -32,8 +45,8 @@ class ForgetPassword: BaseFragment() {
     }
 
     private fun handleNewPassWord(){
-        /*
-        cognitoViewModel.forgotPasswordInBackground(cognitoViewModel.mUserID.value, etPass.text.toString())
+
+        cognitoViewModel.forgotPasswordInBackground(cognitoViewModel.mUserID.value, currentBinding.etPass.getText())
         { identityRequest, map, IdentityResponse ->
             when(identityRequest) {
 //                IdentityRequest.NEED_CREDENTIALS -> {
@@ -53,20 +66,30 @@ class ForgetPassword: BaseFragment() {
 //                }
 
                 IdentityRequest.NEED_NEWPASSWORD -> {
-                    val editText = EditText(requireActivity())
+                    val editText = com.sunionrd.blelocker.widget.EditFieldCompoundView(requireActivity())
+                    //todo : need to use custom edit widget, and ui should be bigger
                     VerificationCodeDialog = MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
                         .setTitle("Enter your Verification Code:")
                         .setCancelable(false)
                         .setView(editText)
                         .setPositiveButton("confirm") { dialog: DialogInterface, _: Int ->
-                            IdentityResponse(mapOf("Code" to editText.text.toString()))
+                            IdentityResponse(mapOf("Code" to editText.getText()))
                         }
                         .show()
                 }
 
                 IdentityRequest.SUCCESS -> {
                     Toast.makeText(requireActivity(), "Success!", Toast.LENGTH_LONG).show()
-                    //to login page
+                    val intent = requireActivity().intent
+                    intent.addFlags(
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                                or Intent.FLAG_ACTIVITY_NO_ANIMATION
+                    )
+                    requireActivity().overridePendingTransition(0, 0)
+                    requireActivity().finish()
+
+                    requireActivity().overridePendingTransition(0, 0)
+                    startActivity(intent)
                 }
 
                 IdentityRequest.FAILURE -> {
@@ -98,7 +121,6 @@ class ForgetPassword: BaseFragment() {
             }
         }
 
-         */
     }
 
     private fun showErrorDialog() {

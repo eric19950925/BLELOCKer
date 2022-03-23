@@ -46,8 +46,7 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
 
     private var appContext: Context? = null
     private var userPool: CognitoUserPool? = null
-//    var mqttManager: AWSIotMqttManager? = null
-    // userAttributes is used for adding attributes to the user
+
     private var userAttributes: CognitoUserAttributes? = null
     private var credentialsProvider: CognitoCachingCredentialsProvider? = null
 
@@ -92,7 +91,6 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
             mqttConnect()
         }
 
-//        mqttManager = AWSIotMqttManager(UUID.randomUUID().toString(), AWS_IOT_CORE_END_POINT)
     }
 
     fun signUpInBackground(userId: String?, password: String?) {
@@ -460,7 +458,7 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
         }
     }
 
-    private fun getIdentityId(function: (token: String) -> Unit) {
+    fun getIdentityId(function: (token: String) -> Unit) {
         currentUser.value?.getSessionInBackground(object :AuthenticationHandler{
             override fun onSuccess(userSession: CognitoUserSession?, newDevice: CognitoDevice?) {
                 viewModelScope.launch(Dispatchers.IO){

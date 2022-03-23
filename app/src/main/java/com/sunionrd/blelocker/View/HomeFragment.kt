@@ -91,6 +91,9 @@ class HomeFragment : BaseFragment(){
                 else -> false
             }
         }
+
+        setupFCM()
+
         homeViewModel.mHomeLocksData.observe(this) { locks -> //todo: this adapter should not use this data structure(LockConnectInformation)
             locks.let { adapter.submitList(it) }
             count = locks.size
@@ -148,6 +151,16 @@ class HomeFragment : BaseFragment(){
         }
 
         setupBackPressedCallback()
+    }
+
+    private fun setupFCM() {
+        cognitoViewModel.getIdentityId{ jwtToken ->
+            (requireActivity() as MainActivity).getFCMtoken {
+                tfhApiViewModel.subPubSetFCM(true, it, jwtToken){
+
+                }
+            }
+        }
     }
 
     private fun setupGetTimeClick() {

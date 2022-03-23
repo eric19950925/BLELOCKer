@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:edit_field_compound="http://schemas.android.com/apk/res-auto"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <TextView
         android:id="@+id/tv_enter_id_title"
@@ -12,11 +13,12 @@
         android:textSize="24dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
-    <EditText
+    <com.sunionrd.blelocker.widget.EditFieldCompoundView
         android:id="@+id/etEmail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="email"
+        edit_field_compound:inputType="email"
+        edit_field_compound:title="E-mail"
         android:layout_margin="8dp"
         app:layout_constraintTop_toBottomOf="@+id/tv_enter_id_title"
         app:layout_constraintStart_toStartOf="parent"/>

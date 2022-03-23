@@ -30,8 +30,11 @@ import android.view.animation.Transformation
 import kotlinx.coroutines.delay
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.util.Log
+import android.widget.Toast
 import androidx.vectordrawable.graphics.drawable.AnimatorInflaterCompat.loadAnimator
-
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
 
 
 class MainActivity : AppCompatActivity() {
@@ -81,6 +84,17 @@ class MainActivity : AppCompatActivity() {
         mPoint1 = findViewById(R.id.cardOne)
         mPoint2 = findViewById(R.id.cardTwo)
         mPoint3 = findViewById(R.id.cardThree)
+
+    }
+
+    fun getFCMtoken(callback:(token: String) -> Unit){
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("TAG", "Fetching FCM registration token failed", task.exception)
+                return@OnCompleteListener
+            }
+            callback(task.result)
+        })
     }
 
     fun controlDrawer(){

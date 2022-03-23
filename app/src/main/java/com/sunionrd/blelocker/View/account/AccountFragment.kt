@@ -1,6 +1,7 @@
 package com.sunionrd.blelocker.View.account
 
 import android.content.DialogInterface
+import android.content.Intent
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.method.ScrollingMovementMethod
@@ -95,8 +96,16 @@ class AccountFragment: BaseFragment(){
                                 "AAA" -> {
                                     viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
                                         cognitoViewModel.closeCognitoCache()
-                                        val navHostFragment = (activity as MainActivity).supportFragmentManager.findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment
-                                        navHostFragment.navController.navigate(R.id.action_to_login)
+                                        val intent = requireActivity().intent
+                                        intent.addFlags(
+                                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                                                    or Intent.FLAG_ACTIVITY_NO_ANIMATION
+                                        )
+                                        requireActivity().overridePendingTransition(0, 0)
+                                        requireActivity().finish()
+
+                                        requireActivity().overridePendingTransition(0, 0)
+                                        startActivity(intent)
                                     }
                                 }
                                 else -> {
@@ -142,8 +151,16 @@ class AccountFragment: BaseFragment(){
             when(LogOutRequest){
                 com.sunionrd.blelocker.CognitoUtils.LogOutRequest.SUCCESS -> {
                     viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                        val navHostFragment = (activity as MainActivity).supportFragmentManager.findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment
-                        navHostFragment.navController.navigate(R.id.action_to_login)
+                        val intent = requireActivity().intent
+                        intent.addFlags(
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                                    or Intent.FLAG_ACTIVITY_NO_ANIMATION
+                        )
+                        requireActivity().overridePendingTransition(0, 0)
+                        requireActivity().finish()
+
+                        requireActivity().overridePendingTransition(0, 0)
+                        startActivity(intent)
                     }
 //                    Navigation.findNavController(requireView()).navigate(R.id.action_to_login)
 //                    Toast.makeText(requireContext(), "Log out Success", Toast.LENGTH_LONG).show()
