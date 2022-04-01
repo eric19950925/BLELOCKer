@@ -90,9 +90,11 @@ class LoginFragment: BaseFragment() {
 
                 IdentityRequest.SUCCESS -> {
                     viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                        cognitoViewModel.getUserDetails(
-                            onSuccess = {
-                                        viewLifecycleOwner.lifecycleScope.launch {
+                        //if have not login success, get detail will always failure, so can not do this.
+                        //todo : How to avoid going to home page and back to login page by login with id which had been delete?
+//                        cognitoViewModel.getUserDetails(
+//                            onSuccess = {
+//                                        viewLifecycleOwner.lifecycleScope.launch {
                                             cognitoViewModel.mUserID.value = currentBinding.etUsername.getText()
                                             cognitoViewModel.getIdentityId{ jwtToken ->
                                                 (requireActivity() as MainActivity).getFCMtoken {
@@ -100,14 +102,14 @@ class LoginFragment: BaseFragment() {
                                                 }
                                                 Navigation.findNavController(requireView()).navigate(R.id.action_login_to_alllock)
                                             }
-                                        }
-                            },
-                            onFailure = {
-                                viewLifecycleOwner.lifecycleScope.launch {
-                                    Toast.makeText(requireActivity(), "找不到此帳號", Toast.LENGTH_LONG).show()
-                                }
-                            }
-                        )
+//                                        }
+//                            },
+//                            onFailure = {
+//                                viewLifecycleOwner.lifecycleScope.launch {
+//                                    Toast.makeText(requireActivity(), "找不到此帳號", Toast.LENGTH_LONG).show()
+//                                }
+//                            }
+//                        )
                     }
                     cognitoViewModel.setAttachPolicy()
                 }
