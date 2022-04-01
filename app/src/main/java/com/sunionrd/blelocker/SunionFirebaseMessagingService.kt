@@ -3,29 +3,31 @@ package com.sunionrd.blelocker
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import android.app.NotificationManager
-
 import android.app.NotificationChannel
-
 import android.os.Build
-
-
 import android.app.PendingIntent
 import android.content.Context
-
 import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import org.json.JSONObject
 
 class SunionFirebaseMessagingService: FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d("TAG", "From: ${remoteMessage.from}")
         if (remoteMessage.data.isNotEmpty()) {
-            Log.d("TAG", "Message data payload: ${remoteMessage.data}")
+            //Log.d("TAG", "payload.toString: ${remoteMessage.data}")
+            //remoteMessage.data's data structure is Map not jsonObject, should not change to string
+            //todo : Proguard maybe cause crash at here.
+            val params = remoteMessage.data
+            val notifyObject = JSONObject(params as Map<*, *>?)
+            Log.d("TAG", "Message data payload: $notifyObject")
+            val msg = notifyObject.getString("message")
+            showNotification("BleLocker FCM from AWS",msg)
         }
         remoteMessage.notification?.let {
-            Log.d("TAG", "Message Notification Body: ${it.body}")
-            showNotification("BleLocker FCM", it.body.toString())
-            //title will still be set by FCM
+            Log.d("TAG", "Message Notification Body: ${it.body }")
+            showNotification("BleLocker FCM from Firebase", it.body.toString())
         }
     }
     private fun showNotification(
@@ -46,7 +48,7 @@ class SunionFirebaseMessagingService: FirebaseMessagingService() {
         builder
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setContentTitle("BleLocker FCM")
+            .setContentTitle(title)
             .setContentText(message)
             .setSmallIcon(R.drawable.ic_lock_main)
             .setChannelId(mChannelId)
@@ -64,7 +66,6 @@ class SunionFirebaseMessagingService: FirebaseMessagingService() {
                 notificationChannel
             )
         }
-
-        notificationManager.notify(0, builder.build())
+        notificationManager.notify(System.currentTimeMillis().toString(),0, builder.build())
     }
 }

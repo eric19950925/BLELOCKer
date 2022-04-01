@@ -11,3 +11,12 @@ data class TFHApiResponseBody (
     val message: String?
 )
 
+data class AWSNotification (
+    val data: AWSNotificationData
+    //One Day will add other members
+)
+
+data class AWSNotificationData (
+    val message: String
+    //One Day will add other members
+)

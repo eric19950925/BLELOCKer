@@ -1,7 +1,6 @@
 package com.sunionrd.blelocker.View.account
 
 import android.content.DialogInterface
-import android.content.Intent
 import android.text.Editable
 import android.text.TextWatcher
 import android.text.method.ScrollingMovementMethod
@@ -13,20 +12,17 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
-import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import androidx.viewbinding.ViewBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.sunionrd.blelocker.BaseFragment
 import com.sunionrd.blelocker.CognitoUtils.CognitoControlViewModel
+import com.sunionrd.blelocker.CognitoUtils.IdentityRequest
 import com.sunionrd.blelocker.MainActivity
 import com.sunionrd.blelocker.R
 import com.sunionrd.blelocker.TFHApiViewModel
 import com.sunionrd.blelocker.databinding.FragmentAccountBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.IOException
@@ -36,7 +32,7 @@ class AccountFragment: BaseFragment(){
     private val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
     private val tfhApiViewModel by viewModel<TFHApiViewModel>()
     override fun getLayoutRes(): Int = R.layout.fragment_account
-    var testScope: Job? = null
+    var LoadingScope: Job? = null
     private lateinit var currentBinding: FragmentAccountBinding
     override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
         currentBinding = FragmentAccountBinding.inflate(inflater, container, false)
@@ -67,60 +63,95 @@ class AccountFragment: BaseFragment(){
         setupLogoutBtnClick()
     }
 
+    private fun checkPasswordBeforeDelete(password: String) {
+        (requireActivity() as MainActivity).showLoadingView()
+        //to check password you must log out first
+        cognitoViewModel.LogOut { LogOutRequest ->
+            when(LogOutRequest){
+                com.sunionrd.blelocker.CognitoUtils.LogOutRequest.SUCCESS -> {
+                    cognitoViewModel.checkPassword { identityRequest, map, callback ->
+                        when(identityRequest) {
+                            IdentityRequest.NEED_CREDENTIALS -> {
+                                callback(mapOf("password" to password))
+                            }
+
+                            IdentityRequest.SUCCESS -> {
+                                closeFCM()
+                                deleteUser()
+                            }
+                            IdentityRequest.FAILURE -> {
+                                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                                    Toast.makeText(requireContext(), "Delete Failure", Toast.LENGTH_LONG).show()
+                                    if (findNavController().currentDestination?.id == R.id.account_Fragment) {
+                                        (requireActivity() as MainActivity).hideLoadingView()
+                                    }
+                                }
+                            }
+                            else -> {}
+                        }
+                    }
+                }
+                com.sunionrd.blelocker.CognitoUtils.LogOutRequest.FAILURE -> {
+                    Log.d("TAG","log out failure")
+                }
+            }
+        }
+    }
+
+    private fun showLoading() = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+        (requireActivity() as MainActivity).showLoadingView()
+        try{
+            var mTimestamp = 0
+            while(mTimestamp < 60) {
+                delay(1000)
+                mTimestamp += 1
+            }
+        }finally {
+            (requireActivity() as MainActivity).hideLoadingView()
+        }
+    }
+
     private fun setupDeleteUserBtnClick() {
         currentBinding.btnDeleteUser.setOnClickListener {
+            //todo editText ui
+            val editText = com.sunionrd.blelocker.widget.EditFieldCompoundView(requireActivity())
             MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
-                .setTitle("Warning")
-                .setCancelable(true)
-                .setMessage("Are you sure to delete user?\nPress \"confirm\" to delete.")
-                .setPositiveButton("confirm") { dialog: DialogInterface, _: Int ->
+                .setTitle("Delete Account")
+                .setCancelable(false)
+                .setMessage("Are you sure to delete account?\nType password to delete.")
+                .setView(editText)
+                .setPositiveButton("Delete") { dialog: DialogInterface, _: Int ->
+                    checkPasswordBeforeDelete(editText.getText())
                     dialog.dismiss()
-                    deleteUser()
+                }
+                .setNegativeButton("Cancel") { dialog: DialogInterface, _: Int ->
+                    dialog.dismiss()
                 }
                 .show()
         }
     }
 
     private fun deleteUser() {
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
-            cognitoViewModel.LogOut { LogOutRequest ->
-                when(LogOutRequest){
-                    com.sunionrd.blelocker.CognitoUtils.LogOutRequest.SUCCESS -> {
-                        tfhApiViewModel.subPubUserDelete(
-                            cognitoViewModel.mqttManager?:return@LogOut,
-                            cognitoViewModel.mIdentityPoolId.value?:return@LogOut,
-                            cognitoViewModel.mJwtToken.value?:return@LogOut
-                        ){ response ->
-                            Log.d("TAG", "response: $response")
-                            when(response){
-                                "AAA" -> {
-                                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                                        cognitoViewModel.closeCognitoCache()
-                                        val intent = requireActivity().intent
-                                        intent.addFlags(
-                                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-                                                    or Intent.FLAG_ACTIVITY_NO_ANIMATION
-                                        )
-                                        requireActivity().overridePendingTransition(0, 0)
-                                        requireActivity().finish()
-
-                                        requireActivity().overridePendingTransition(0, 0)
-                                        startActivity(intent)
-                                    }
-                                }
-                                else -> {
-                                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
-                                        Log.d("TAG",response)
-                                    }
-                                }
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {//
+            cognitoViewModel.getIdentityId { jwtToken ->
+                tfhApiViewModel.deleteAccount(jwtToken) { response ->
+//                    when (response) {
+//                        "AAA" -> {
+                            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                                cognitoViewModel.closeCognitoCache()
+                                reStartActivity()
                             }
-                        }
-                    }
-                    com.sunionrd.blelocker.CognitoUtils.LogOutRequest.FAILURE -> {
-                        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                            Toast.makeText(requireContext(), "Log out Failure", Toast.LENGTH_LONG).show()
-                        }
-                    }
+                            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                                cognitoViewModel.currentUser.value = null
+                            }
+//                        }
+//                        else -> {
+//                            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+//                                Log.e("TAG", "errorMsg: $response")
+//                                LoadingScope?.cancel()
+//                            }
+//                        }
+//                    }
                 }
             }
         }
@@ -147,29 +178,28 @@ class AccountFragment: BaseFragment(){
     }
 
     private fun logout() = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+            (requireActivity() as MainActivity).showLoadingView()
+        }
+        closeFCM()
         cognitoViewModel.LogOut { LogOutRequest ->
             when(LogOutRequest){
                 com.sunionrd.blelocker.CognitoUtils.LogOutRequest.SUCCESS -> {
-                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                        val intent = requireActivity().intent
-                        intent.addFlags(
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-                                    or Intent.FLAG_ACTIVITY_NO_ANIMATION
-                        )
-                        requireActivity().overridePendingTransition(0, 0)
-                        requireActivity().finish()
-
-                        requireActivity().overridePendingTransition(0, 0)
-                        startActivity(intent)
-                    }
-//                    Navigation.findNavController(requireView()).navigate(R.id.action_to_login)
-//                    Toast.makeText(requireContext(), "Log out Success", Toast.LENGTH_LONG).show()
+                    reStartActivity()
                 }
                 com.sunionrd.blelocker.CognitoUtils.LogOutRequest.FAILURE -> {
                     viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
                         Toast.makeText(requireContext(), "Log out Failure", Toast.LENGTH_LONG).show()
                     }
                 }
+            }
+        }
+    }
+
+    private fun closeFCM() {
+        cognitoViewModel.getIdentityId{ jwtToken ->
+            (requireActivity() as MainActivity).getFCMtoken {
+                tfhApiViewModel.setFCM(false, it, jwtToken){}
             }
         }
     }

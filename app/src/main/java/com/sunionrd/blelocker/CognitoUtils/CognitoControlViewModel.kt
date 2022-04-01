@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.*
 import com.amazonaws.regions.Regions
@@ -13,13 +14,12 @@ import kotlinx.coroutines.launch
 import java.lang.Exception
 import com.amazonaws.auth.CognitoCachingCredentialsProvider
 import kotlinx.coroutines.Dispatchers
-import java.util.*
 import kotlin.collections.HashMap
-import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.mobileconnectors.iot.*
 import com.amazonaws.auth.AWSSessionCredentials
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.continuations.*
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.handlers.*
+import com.amazonaws.services.cognitoidentityprovider.model.NotAuthorizedException
 import com.sunionrd.blelocker.Entity.MqttStatus
 import kotlinx.coroutines.Job
 import okhttp3.*
@@ -82,14 +82,15 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
         credentialsProvider?.clearCredentials()
     }
 
-    fun initMQTTbyAWSIotCore() = viewModelScope.launch(Dispatchers.IO) {
+    fun initMQTTbyAWSIotCore(failure: () -> Unit) = viewModelScope.launch(Dispatchers.IO) {
 //        viewModelScope.launch {
 //            mMqttStatus.value = MqttStatus.UNCONNECT
 //        }
-        getAccessToken{
+        getAccessToken(
             //Now mqtt can connect by CognitoCachingCredentialsProvider
-            mqttConnect()
-        }
+            success = { mqttConnect() },
+            failure = { failure.invoke() }
+        )
 
     }
 
@@ -180,21 +181,20 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
      * Before any action to do mqtt, need to check if has been global sign out by getDetail()
      */
     fun getUserDetails(onSuccess: (userId: String) -> Job, onFailure: () -> Job) = viewModelScope.launch(Dispatchers.IO) {
-        currentUser.value?.getDetails(object : GetDetailsHandler{
+        viewModelScope.launch(Dispatchers.Main) {
+            currentUser.value = userPool?.currentUser
+        }
+        userPool?.currentUser?.getDetails(object : GetDetailsHandler{
             override fun onSuccess(cognitoUserDetails: CognitoUserDetails?) {
-                Log.d("TAG",cognitoUserDetails.toString())
                 val userAtts: MutableMap<String, String>? = cognitoUserDetails?.attributes?.attributes
+                Log.d("TAG",userAtts.toString())
                 val userName = userAtts?.get("name").toString()
-                viewModelScope.launch(Dispatchers.Main) {
-                    mUserID.value = userName
-                }
                 onSuccess(userName)
             }
 
             override fun onFailure(exception: Exception?) {
-                //been global sign out
-                Log.d("TAG",exception.toString())
-                currentUser.value?.signOut()
+                //Due to being global sign out, it's necessary to sign out it self for the access token has be revoked .
+                Log.d("TAG","get Details failure: "+exception.toString())
                 onFailure.invoke()
             }
         })
@@ -212,7 +212,7 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
                     newDevice: CognitoDevice?
                 ) {
                     viewModelScope.launch {
-                        handler(IdentityRequest.SUCCESS,null,{})
+                        handler(IdentityRequest.SUCCESS, null) {}
                     }
                 }
 
@@ -262,13 +262,9 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
         }
     }
 
-    fun autoLogin(userId: String?, handler: IdentityHandler){
+    fun checkPassword(handler: IdentityHandler){
         try{
-            userID = userId
-            viewModelScope.launch(Dispatchers.Main) {
-                currentUser.value = userPool?.getUser(userId)
-            }
-            userPool?.getUser(userId)?.getSession(object : AuthenticationHandler{
+            userPool?.currentUser?.getSessionInBackground(object : AuthenticationHandler {
                 override fun onSuccess(
                     userSession: CognitoUserSession?,
                     newDevice: CognitoDevice?
@@ -279,8 +275,16 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
                 }
 
                 override fun getAuthenticationDetails(authenticationContinuation: AuthenticationContinuation?, userId: String?) {
-                    handler(IdentityRequest.FAILURE, null){}
-                    Log.d("TAG","need pw")
+                    val continuation = checkNotNull(authenticationContinuation) { "Invalid continuation handler" }
+                    viewModelScope.launch {
+                        handler(IdentityRequest.NEED_CREDENTIALS, null) { r -> run {
+                            val response = checkNotNull(r) { "Invalid identity response" }
+                            val password = response["password"] ?: ""
+
+                            continuation.setAuthenticationDetails(AuthenticationDetails(userId, password, null))
+                            continuation.continueTask()
+                        }}
+                    }
                 }
 
                 override fun getMFACode(continuation: MultiFactorAuthenticationContinuation?) {
@@ -297,16 +301,13 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
                     handleFailure(handler, exception?.toString())
                     handler(IdentityRequest.FAILURE, mapOf("exception" to exception)){}
                 }
-
             })
-
-
         }catch (exception: Exception){
             handleFailure(handler, exception.toString())
         }
     }
 
-    fun LogOut(handler: LogOutHandler){
+    fun LogOut(handler: LogOutHandler) = viewModelScope.launch (Dispatchers.IO) {
 //        currentUser.value?.signOut()
 //        handler(LogOutRequest.SUCCESS)
 
@@ -376,54 +377,38 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
             Log.e("TAG", "mqttDisconnect error.", e)
         }
     }
-    
-    fun getUserInfo(function: () -> Unit) {
-        currentUser.value?.getSessionInBackground(object :AuthenticationHandler{
-            override fun onSuccess(userSession: CognitoUserSession?, newDevice: CognitoDevice?) {
-                viewModelScope.launch(Dispatchers.Main) {
-                    mJwtToken.value = userSession?.idToken?.jwtToken
-                    mUserID.value = userSession?.username
-                    function.invoke()
-                }
-            }
 
-            override fun getAuthenticationDetails(authenticationContinuation: AuthenticationContinuation?, userId: String?) {}
-
-            override fun getMFACode(continuation: MultiFactorAuthenticationContinuation?) {}
-
-            override fun authenticationChallenge(continuation: ChallengeContinuation?) {}
-
-            override fun onFailure(exception: Exception?) {}
-
-        })
-    }
-
-    fun getAccessToken(function: (mCredentials: AWSSessionCredentials?) -> Unit) {
+    private fun getAccessToken(success: (mCredentials: AWSSessionCredentials?) -> Unit, failure: () -> Unit) {
         currentUser.value?.getSessionInBackground(object :AuthenticationHandler{
             override fun onSuccess(userSession: CognitoUserSession?, newDevice: CognitoDevice?) {
 
-                //todo: logins name should change to right Region !!
+                //fixme: logins name should change to right Region !!
                 viewModelScope.launch(Dispatchers.IO){
                     val logins: MutableMap<String, String> = HashMap()
 
                     logins.put(USER_POOL_ADDRESS, userSession?.idToken?.jwtToken.toString())
                     Log.d("TAG","jwtToken: "+userSession?.idToken?.jwtToken.toString())
+                    Log.d("TAG","refreshToken: "+userSession?.refreshToken?.token)
+                    Log.d("TAG","accessToken: "+userSession?.accessToken?.jwtToken)
                     try{
                         credentialsProvider?.logins = logins
                         val mIdentityId = credentialsProvider?.identityId?:"" //use it to get aws service
                         viewModelScope.launch(Dispatchers.Main){
                             mIdentityPoolId.value = mIdentityId
+                            mJwtToken.value = userSession?.idToken?.jwtToken
                         }
                         val mCredentials = credentialsProvider?.credentials
                         Log.d("TAG", "mIdentityId: $mIdentityId")
-                        function(mCredentials)
+                        success(mCredentials)
                     }catch (e: Exception){
                         Log.e("TAG",e.toString())
                     }
                 }
             }
 
-            override fun getAuthenticationDetails(authenticationContinuation: AuthenticationContinuation?, userId: String?) {}
+            override fun getAuthenticationDetails(authenticationContinuation: AuthenticationContinuation?, userId: String?) {
+                failure.invoke()
+            }
 
             override fun getMFACode(continuation: MultiFactorAuthenticationContinuation?) {}
 
@@ -458,14 +443,17 @@ class CognitoControlViewModel(val context: Context, val mqttManager: AWSIotMqttM
         }
     }
 
+    /**
+     * This function is only for attach police, other events should use the live data which has been stored.
+     */
     fun getIdentityId(function: (token: String) -> Unit) {
         currentUser.value?.getSessionInBackground(object :AuthenticationHandler{
             override fun onSuccess(userSession: CognitoUserSession?, newDevice: CognitoDevice?) {
-                viewModelScope.launch(Dispatchers.IO){
+                viewModelScope.launch(Dispatchers.Main){
                     try{
                         function(userSession?.idToken?.jwtToken.toString())
                     }catch (e: Exception){
-                        Log.e("TAG",e.toString())
+                        Log.e("TAG", "getIdentityId: $e")
                     }
                 }
             }

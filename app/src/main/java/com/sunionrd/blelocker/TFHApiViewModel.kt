@@ -5,12 +5,11 @@ import androidx.lifecycle.ViewModel
 import com.amazonaws.mobileconnectors.iot.AWSIotMqttManager
 import com.amazonaws.mobileconnectors.iot.AWSIotMqttNewMessageCallback
 import com.amazonaws.mobileconnectors.iot.AWSIotMqttQos
-import com.sunionrd.blelocker.Entity.ClassicShadow
-import com.sunionrd.blelocker.Entity.TFHApiResponseMsg
 import com.sunionrd.blelocker.mTFHApiUtils.TFHApiRepository
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.sunionrd.blelocker.CognitoUtils.CognitoControlViewModel
+import com.sunionrd.blelocker.Entity.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -19,6 +18,9 @@ import java.io.IOException
 import java.io.UnsupportedEncodingException
 
 class TFHApiViewModel(private val repo: TFHApiRepository): ViewModel(){
+    private val client = OkHttpClient()
+    private val gson = Gson()
+    private val MEDIA_TYPE_JSON = CognitoControlViewModel.CONTENT_TYPE_JSON.toMediaType()
 
     fun subPubGetClassicShadow(mqttManager: AWSIotMqttManager, callback: (power: Boolean)-> Unit){
         mqttManager.subscribeToTopic(repo.getAcceptedClassicTopic("242779ea-6972-4e2d-b7b5-dbe490e29def"), AWSIotMqttQos.QOS0, AWSIotMqttNewMessageCallback { topic: String?, data: ByteArray? ->
@@ -146,10 +148,7 @@ class TFHApiViewModel(private val repo: TFHApiRepository): ViewModel(){
             AWSIotMqttQos.QOS0
         )
     }
-    fun subPubSetFCM(enable: Boolean, FCMtoken: String, jwtToken: String, callback: (response: String)-> Unit){
-
-        val client = OkHttpClient()
-        val gson = Gson()
+    fun setFCM(enable: Boolean, FCMtoken: String, jwtToken: String, callback: (response: String)-> Unit){
         val mSetNotifyPayload = SetNotifyPayload(
             Type = 0,
             Token = FCMtoken,
@@ -160,13 +159,8 @@ class TFHApiViewModel(private val repo: TFHApiRepository): ViewModel(){
         )
         val postBody = gson.toJson(mSetNotifyPayload).toString()
         Log.d("TAG", postBody)
-        val MEDIA_TYPE_JSON = CognitoControlViewModel.CONTENT_TYPE_JSON.toMediaType()
 
-        val request = Request.Builder()
-            .url("https://api.ikey-lock.com/v1/app-notification")
-            .header("Authorization", "Bearer $jwtToken")
-            .post(postBody.toRequestBody(MEDIA_TYPE_JSON))
-            .build()
+        val request = customRequest("app-notification", jwtToken, postBody)
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -182,6 +176,38 @@ class TFHApiViewModel(private val repo: TFHApiRepository): ViewModel(){
         })
 
     }
+
+    fun deleteAccount(jwtToken: String, callback: (response: String)-> Unit){
+        val mDeleteAccountPayload = "{\"clientToken\":\"AAA\"}"
+        val postBody = gson.toJson(mDeleteAccountPayload).toString()
+        Log.d("TAG", postBody)
+
+        val request = customRequest("user/delete", jwtToken, "{}")
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.d("TAG", "api error msg: $e")
+                callback(e.toString())
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                Log.d("TAG", "response: ${response.body?.string()}")
+//                val res = response.body?.string()?:""
+//                val obj = JSONObject(res)
+//                Log.d("TAG", "response: $obj")
+//                val clientToken = obj.getString("message")
+                callback("")
+//                https://stackoverflow.com/questions/58094772/okhttp-response-fail-java-lang-illegalstateexception-closed
+            }
+        })
+
+    }
+
+    private fun customRequest(apiName: String, jwtToken: String, postBody: String): Request = Request.Builder()
+        .url("https://api.ikey-lock.com/v1/$apiName")
+        .header("Authorization", "Bearer $jwtToken")
+        .post(postBody.toRequestBody(MEDIA_TYPE_JSON))
+        .build()
 }
 
 data class SetNotifyPayload(

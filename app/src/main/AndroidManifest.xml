@@ -47,7 +47,13 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_auto_unlock" />
 
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/error" />
         <service
             android:name=".SunionFirebaseMessagingService"
             android:exported="false"

@@ -1,11 +1,15 @@
 package com.sunionrd.blelocker
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.viewbinding.ViewBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 abstract class BaseFragment: Fragment() {
     protected abstract fun getLayoutRes(): Int?
@@ -39,6 +43,18 @@ abstract class BaseFragment: Fragment() {
 
     abstract fun onViewHasCreated()
     abstract fun onBackPressed()
+    fun reStartActivity() = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+        val intent = requireActivity().intent
+        intent.addFlags(
+            Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                    or Intent.FLAG_ACTIVITY_NO_ANIMATION
+        )
+        requireActivity().overridePendingTransition(0, 0)
+        requireActivity().finish()
+
+        requireActivity().overridePendingTransition(0, 0)
+        startActivity(intent)
+    }
 //    private val backPressedDispatcher = object : OnBackPressedCallback(true) {
 //        override fun handleOnBackPressed() {
 //            // Redirect to our own function

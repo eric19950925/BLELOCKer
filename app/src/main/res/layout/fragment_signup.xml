@@ -1,5 +1,6 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:edit_field_compound="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     >
@@ -9,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <EditText
+        <com.sunionrd.blelocker.widget.EditFieldCompoundView
             android:id="@+id/etUsername"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -18,13 +19,14 @@
             android:layout_marginEnd="8dp"
             android:ems="10"
             android:hint="Username"
-            android:inputType="textPersonName"
+            edit_field_compound:inputType="name"
+            edit_field_compound:title="Username"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <EditText
+        <com.sunionrd.blelocker.widget.EditFieldCompoundView
             android:id="@+id/etEmail"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -33,13 +35,15 @@
             android:layout_marginEnd="8dp"
             android:ems="10"
             android:hint="Email"
+            edit_field_compound:inputType="email"
+            edit_field_compound:title="Email"
             android:inputType="textPersonName|textWebEmailAddress"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/etUsername" />
 
-        <EditText
+        <com.sunionrd.blelocker.widget.EditFieldCompoundView
             android:id="@+id/etPass"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -48,12 +52,13 @@
             android:layout_marginEnd="8dp"
             android:ems="10"
             android:hint="Password"
-            android:inputType="textPassword"
+            edit_field_compound:inputType="password"
+            edit_field_compound:title="Password"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/etMobile" />
 
-        <EditText
+        <com.sunionrd.blelocker.widget.EditFieldCompoundView
             android:id="@+id/etMobile"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -82,7 +87,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/cbAgree" />
 
-        <EditText
+        <com.sunionrd.blelocker.widget.EditFieldCompoundView
             android:id="@+id/etRepeatPass"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -91,7 +96,8 @@
             android:layout_marginEnd="8dp"
             android:ems="10"
             android:hint="RepeatPassword"
-            android:inputType="textPassword"
+            edit_field_compound:inputType="password"
+            edit_field_compound:title="RepeatPassword"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/etPass" />
@@ -103,12 +109,13 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
+            android:textColor="@color/primary"
             android:text="Agree to the Terms and Conditions"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/etRepeatPass" />
 
-        <EditText
+        <com.sunionrd.blelocker.widget.EditFieldCompoundView
             android:id="@+id/etConfCode"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -117,7 +124,8 @@
             android:layout_marginEnd="8dp"
             android:ems="10"
             android:hint="Enter Confirmation Code Here"
-            android:inputType="number"
+            edit_field_compound:title="Confirmation Code"
+            edit_field_compound:inputType="code"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/btnSignUp" />

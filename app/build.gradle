@@ -4,6 +4,7 @@ plugins {
 //    id 'kotlin-android-extensions'
     id 'kotlin-kapt'
     id 'com.google.gms.google-services'
+    id 'com.google.firebase.crashlytics'
 }
 
 android {
@@ -30,6 +31,13 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            firebaseCrashlytics {
+                // Enable processing and uploading of native symbols to Firebase servers.
+                // By default, this is disabled to improve build speeds.
+                // This flag must be enabled to see properly-symbolicated native
+                // stack traces in the Crashlytics dashboard.
+                nativeSymbolUploadEnabled true
+            }
         }
     }
     compileOptions {
@@ -126,4 +134,8 @@ dependencies {
     implementation 'androidx.palette:palette-ktx:1.0.0'
 
     implementation 'org.json:json:20220320'
+
+    implementation platform('com.google.firebase:firebase-bom:29.3.0')
+    implementation 'com.google.firebase:firebase-crashlytics-ndk'
+    implementation 'com.google.firebase:firebase-analytics'
 }

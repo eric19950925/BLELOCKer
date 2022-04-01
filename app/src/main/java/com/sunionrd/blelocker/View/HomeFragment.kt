@@ -81,7 +81,10 @@ class HomeFragment : BaseFragment(){
                     true
                 }
                 R.id.github -> {
-                    Navigation.findNavController(requireView()).navigate(R.id.action_home_Fragment_to_account_Fragment)
+                    //todo Sometimes won't work.
+                    if (Navigation.findNavController(requireView()).currentDestination?.id == R.id.home_Fragment) {
+                        Navigation.findNavController(requireView()).navigate(R.id.action_home_Fragment_to_account_Fragment)
+                    }
                     true
                 }
                 R.id.delete -> {
@@ -91,8 +94,6 @@ class HomeFragment : BaseFragment(){
                 else -> false
             }
         }
-
-        setupFCM()
 
         homeViewModel.mHomeLocksData.observe(this) { locks -> //todo: this adapter should not use this data structure(LockConnectInformation)
             locks.let { adapter.submitList(it) }
@@ -153,28 +154,17 @@ class HomeFragment : BaseFragment(){
         setupBackPressedCallback()
     }
 
-    private fun setupFCM() {
-        cognitoViewModel.getIdentityId{ jwtToken ->
-            (requireActivity() as MainActivity).getFCMtoken {
-                tfhApiViewModel.subPubSetFCM(true, it, jwtToken){
-
-                }
-            }
-        }
-    }
-
     private fun setupGetTimeClick() {
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
-            cognitoViewModel.getUserInfo{
-                tfhApiViewModel.subPubGetTime(
-                    mqttManager = cognitoViewModel.mqttManager,
-                    cognitoViewModel.mIdentityPoolId.value?:return@getUserInfo,
-                    cognitoViewModel.mJwtToken.value?:return@getUserInfo)
-                { response ->
-                    Log.d("TAG", "response: $response")
-                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                        currentBinding.tvTime.text = response
-                    }
+            tfhApiViewModel.subPubGetTime(
+                mqttManager = cognitoViewModel.mqttManager,
+                cognitoViewModel.mIdentityPoolId.value?:return@launch,
+                cognitoViewModel.mJwtToken.value?:return@launch)
+            { response ->
+                Log.d("TAG", "response: $response")
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                    currentBinding.tvTime.text = response
+                }
 //                    when(response){
 //                        "AAA" -> {
 //                            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
@@ -187,14 +177,11 @@ class HomeFragment : BaseFragment(){
 //                            }
 //                        }
 //                    }
-                }
             }
         }
     }
 
     private fun setupBackPressedCallback() {
-        //需中斷mqtt連線
-        //刪除DB-cognito
         requireActivity().onBackPressedDispatcher.addCallback(
             viewLifecycleOwner,
             object : OnBackPressedCallback(true) {
@@ -351,11 +338,6 @@ class HomeFragment : BaseFragment(){
     override fun onResume() {
         super.onResume()
         //check if been global sign out
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-            currentBinding.tvUserId.text = cognitoViewModel.mUserID.value
-            (requireActivity() as MainActivity).setUserName(cognitoViewModel.mUserID.value?:"")
-            (requireActivity() as MainActivity).setPaletteColor(R.drawable.ic_icons8_github)
-        }
         Log.d("TAG","getUserStatus")
         //loading... todo
         loadingScope = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
@@ -374,16 +356,25 @@ class HomeFragment : BaseFragment(){
             onFailure = {
                 loadingScope?.cancel()
                 viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                    logoutByGlobalSignOut()
                     val navHostFragment = (activity as MainActivity).supportFragmentManager.findFragmentById(R.id.my_nav_host_fragment) as NavHostFragment
                     navHostFragment.navController.navigate(R.id.action_to_login)
                 }
             },
-            onSuccess = {
+            onSuccess = { userId ->
                 viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
-                    Log.d("TAG",it)
-                    if(cognitoViewModel.mMqttStatus.value == null){
-                        cognitoViewModel.initMQTTbyAWSIotCore()
-                    }
+                    Log.d("HomeFragment onResume getUserDetails Success: ", userId)
+                    if(cognitoViewModel.mMqttStatus.value == null || cognitoViewModel.mMqttStatus.value == MqttStatus.CONNECTION_LOST){
+                        cognitoViewModel.initMQTTbyAWSIotCore (failure = {
+                            reStartActivity()
+                        })
+                    }else loadingScope?.cancel()
+                }
+                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                    cognitoViewModel.mUserID.value = userId
+                    currentBinding.tvUserId.text = cognitoViewModel.mUserID.value
+                    (requireActivity() as MainActivity).setUserName(userId)
+                    (requireActivity() as MainActivity).setPaletteColor(R.drawable.ic_icons8_github)
                 }
             }
         )
@@ -391,11 +382,28 @@ class HomeFragment : BaseFragment(){
         initHomeLocksData()
     }
 
+    private fun logoutByGlobalSignOut() = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
+        closeFCM()
+        cognitoViewModel.currentUser.value?.signOut()
+    }
+
+    private fun closeFCM() {
+        cognitoViewModel.getIdentityId{ jwtToken ->
+            (requireActivity() as MainActivity).getFCMtoken {
+                tfhApiViewModel.setFCM(false, it, jwtToken){}
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+    }
+
     private fun getDeviceShadow() {
         tfhApiViewModel.subPubGetClassicShadow(cognitoViewModel.mqttManager?:return){
             updateShadowPower(it)
             //正確顯示狀態後才能開始操作
-            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO){
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){ //must do in ui thread
                 currentBinding.btnSubpubUpdate.isClickable = true
             }
         }

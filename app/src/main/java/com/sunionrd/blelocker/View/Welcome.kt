@@ -45,19 +45,21 @@ class Welcome:BaseFragment() {
         objectAnimator.start()
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-            delay(4000)
 
-                cognitoViewModel.autoLogin("eric_shih@sunion.com.tw"){ identityRequest, map, callback ->
-                    when(identityRequest) {
-                        IdentityRequest.SUCCESS -> {
-                            Navigation.findNavController(requireView()).navigate(R.id.action_welcome_to_home_Fragment)
-                        }
-                        else -> {
-                            Log.d("TAG","Need other info, please log in again.")
-                            Navigation.findNavController(requireView()).navigate(R.id.action_welcome_to_login_Fragment)
-                        }
+            cognitoViewModel.getUserDetails(
+                onSuccess = {
+                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                        delay(4000)
+                        Navigation.findNavController(requireView()).navigate(R.id.action_welcome_to_home_Fragment)
+                    } },
+                onFailure = {
+                    viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
+                        delay(4000)
+                        Log.d("TAG","Need other info, please log in again.")
+                        Navigation.findNavController(requireView()).navigate(R.id.action_welcome_to_login_Fragment)
                     }
                 }
+            )
          }
     }
 

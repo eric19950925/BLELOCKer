@@ -4,12 +4,10 @@ import android.content.DialogInterface
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
-import androidx.navigation.fragment.NavHostFragment
 import androidx.viewbinding.ViewBinding
 import com.amazonaws.AmazonClientException
 import com.amazonaws.mobileconnectors.cognitoidentityprovider.exceptions.CognitoParameterInvalidException
@@ -23,9 +21,11 @@ import com.sunionrd.blelocker.MainActivity
 import com.sunionrd.blelocker.R
 import com.sunionrd.blelocker.databinding.FragmentLoginBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.sunionrd.blelocker.TFHApiViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.net.UnknownHostException
 
 class LoginFragment: BaseFragment() {
@@ -37,6 +37,7 @@ class LoginFragment: BaseFragment() {
         return currentBinding
     }
 
+    private val tfhApiViewModel by viewModel<TFHApiViewModel>()
     private val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
     private var dialogMfa: AlertDialog? = null
 
@@ -66,13 +67,13 @@ class LoginFragment: BaseFragment() {
                 }
 
                 IdentityRequest.NEED_MULTIFACTORCODE -> {
-                    val editText = EditText(requireActivity())
+                    val editText = com.sunionrd.blelocker.widget.EditFieldCompoundView(requireActivity())
                     dialogMfa = MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
                         .setTitle("Enter your MFA code:")
                         .setCancelable(false)
                         .setView(editText)
                         .setPositiveButton("confirm") { dialog: DialogInterface, _: Int ->
-                            callback(mapOf("mfaCode" to editText.text.toString()))
+                            callback(mapOf("mfaCode" to editText.getText()))
                         }
                         .show()
                 }
@@ -88,11 +89,26 @@ class LoginFragment: BaseFragment() {
 //                }
 
                 IdentityRequest.SUCCESS -> {
-                    //todo
                     viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
-                        cognitoViewModel.mUserID.value = currentBinding.etUsername.getText()
+                        cognitoViewModel.getUserDetails(
+                            onSuccess = {
+                                        viewLifecycleOwner.lifecycleScope.launch {
+                                            cognitoViewModel.mUserID.value = currentBinding.etUsername.getText()
+                                            cognitoViewModel.getIdentityId{ jwtToken ->
+                                                (requireActivity() as MainActivity).getFCMtoken {
+                                                    tfhApiViewModel.setFCM(true, it, jwtToken){}
+                                                }
+                                                Navigation.findNavController(requireView()).navigate(R.id.action_login_to_alllock)
+                                            }
+                                        }
+                            },
+                            onFailure = {
+                                viewLifecycleOwner.lifecycleScope.launch {
+                                    Toast.makeText(requireActivity(), "找不到此帳號", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        )
                     }
-                    Navigation.findNavController(requireView()).navigate(R.id.action_login_to_alllock)
                     cognitoViewModel.setAttachPolicy()
                 }
 
@@ -110,13 +126,13 @@ class LoginFragment: BaseFragment() {
                                     Toast.makeText(requireActivity(), "帳號或密碼錯誤", Toast.LENGTH_LONG).show()
                                 }
                                 is UserNotConfirmedException -> {
-                                    val editText = EditText(requireActivity())
+                                    val editText = com.sunionrd.blelocker.widget.EditFieldCompoundView(requireActivity())
                                     MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
                                         .setTitle("Enter your Verification Code:")
                                         .setCancelable(false)
                                         .setView(editText)
                                         .setPositiveButton("confirm") { dialog: DialogInterface, _: Int ->
-                                            cognitoViewModel.confirmUser(currentBinding.etUsername.getText(), editText.getText().toString().replace(" ", ""))
+                                            cognitoViewModel.confirmUser(currentBinding.etUsername.getText(), editText.getText().replace(" ", ""))
                                         }
                                         .show()
                                 }

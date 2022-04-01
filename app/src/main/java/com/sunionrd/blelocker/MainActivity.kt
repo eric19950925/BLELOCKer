@@ -1,7 +1,5 @@
 package com.sunionrd.blelocker
 
-import android.animation.AnimatorInflater
-import android.animation.AnimatorInflater.loadAnimator
 import android.app.PendingIntent
 import android.content.DialogInterface
 import android.os.Build
@@ -19,20 +17,12 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.widget.ImageView
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
-
 import androidx.palette.graphics.Palette
 import com.google.android.material.navigation.NavigationView
 import androidx.palette.graphics.Palette.PaletteAsyncListener
 import com.sunionrd.blelocker.Exception.drawableToBitmap
-import android.view.animation.Animation
-import android.view.animation.AnimationUtils
-import android.view.animation.Transformation
-import kotlinx.coroutines.delay
 import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.util.Log
-import android.widget.Toast
-import androidx.vectordrawable.graphics.drawable.AnimatorInflaterCompat.loadAnimator
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 
@@ -149,7 +139,7 @@ class MainActivity : AppCompatActivity() {
         Palette.from(mBitmap).maximumColorCount(12)
             .generate(PaletteAsyncListener { palette ->
                 // Get the "vibrant" color swatch based on the bitmap
-                val vibrant = palette!!.lightVibrantSwatch
+                val vibrant = palette!!.darkVibrantSwatch
                 if (vibrant != null) {
                     // Set the background color of a layout based on the vibrant color
                     navView.setBackgroundColor(vibrant.rgb)
@@ -207,7 +197,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
+    override fun onDestroy() {
+        super.onDestroy()
+    }
 }
 
 

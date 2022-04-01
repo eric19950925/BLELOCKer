@@ -11,7 +11,7 @@ import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 class SignUpFragment: BaseFragment() {
     override fun getLayoutRes(): Int = R.layout.fragment_signup
-    val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
+    private val cognitoViewModel by sharedViewModel<CognitoControlViewModel>()
     private var userId: String? = null
     private lateinit var currentBinding: FragmentSignupBinding
     override fun getLayoutBinding(inflater: LayoutInflater, container: ViewGroup?): ViewBinding? {
@@ -21,25 +21,24 @@ class SignUpFragment: BaseFragment() {
     override fun onViewHasCreated() {
 
         currentBinding.btnSignUp.setOnClickListener {
-            if (currentBinding.etPass.getText().toString().endsWith(currentBinding.etRepeatPass.getText().toString())) {
-                userId = currentBinding.etUsername.text.toString().replace(" ", "")
+            if (currentBinding.etPass.getText().endsWith(currentBinding.etRepeatPass.getText())) {
+                userId = currentBinding.etUsername.getText().replace(" ", "")
                 cognitoViewModel.addAttribute("name", userId)
 //                cognitoViewModel.addAttribute(
 //                    "phone_number",
 //                    etMobile.getText().toString().replace(" ", "")
 //                )
-                cognitoViewModel.addAttribute("email", currentBinding.etEmail.getText().toString().replace(" ", ""))
-                cognitoViewModel.signUpInBackground(userId, currentBinding.etPass.getText().toString())
+                cognitoViewModel.addAttribute("email", currentBinding.etEmail.getText().replace(" ", ""))
+                currentBinding.btnSignUp.isClickable = false //avoid to signup again
+                cognitoViewModel.signUpInBackground(userId, currentBinding.etPass.getText())
             } else {
             }
         }
 
         currentBinding.btnVerify.setOnClickListener {
-            cognitoViewModel.confirmUser(userId, currentBinding.etConfCode.getText().toString().replace(" ", ""))
-            //finish();
+            cognitoViewModel.confirmUser(userId, currentBinding.etConfCode.getText().replace(" ", ""))
+            reStartActivity()
         }
-
-
     }
 
     override fun onBackPressed() {
