@@ -3,6 +3,7 @@ package com.sunionrd.blelocker.View.SignIn
 import android.content.DialogInterface
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -18,10 +19,11 @@ import com.sunionrd.blelocker.BaseFragment
 import com.sunionrd.blelocker.CognitoUtils.CognitoControlViewModel
 import com.sunionrd.blelocker.CognitoUtils.IdentityRequest
 import com.sunionrd.blelocker.MainActivity
-import com.sunionrd.blelocker.R
 import com.sunionrd.blelocker.databinding.FragmentLoginBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.sunionrd.blelocker.R
 import com.sunionrd.blelocker.TFHApiViewModel
+import com.sunionrd.blelocker.databinding.BaseDialogLayoutBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
@@ -91,25 +93,15 @@ class LoginFragment: BaseFragment() {
                 IdentityRequest.SUCCESS -> {
                     viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
                         //if have not login success, get detail will always failure, so can not do this.
-                        //todo : How to avoid going to home page and back to login page by login with id which had been delete?
-//                        cognitoViewModel.getUserDetails(
-//                            onSuccess = {
-//                                        viewLifecycleOwner.lifecycleScope.launch {
-                                            cognitoViewModel.mUserID.value = currentBinding.etUsername.getText()
-                                            cognitoViewModel.getIdentityId{ jwtToken ->
-                                                (requireActivity() as MainActivity).getFCMtoken {
-                                                    tfhApiViewModel.setFCM(true, it, jwtToken){}
-                                                }
-                                                Navigation.findNavController(requireView()).navigate(R.id.action_login_to_alllock)
-                                            }
-//                                        }
-//                            },
-//                            onFailure = {
-//                                viewLifecycleOwner.lifecycleScope.launch {
-//                                    Toast.makeText(requireActivity(), "找不到此帳號", Toast.LENGTH_LONG).show()
-//                                }
-//                            }
-//                        )
+                        //Question : How to avoid going to home page and back to login page by login with id which had been delete?
+                        //Answer : sign out before delete account.
+                        cognitoViewModel.mUserID.value = currentBinding.etUsername.getText()
+                        cognitoViewModel.getIdentityId{ jwtToken ->
+                            (requireActivity() as MainActivity).getFCMtoken {
+                                tfhApiViewModel.setFCM(true, it, jwtToken){}
+                            }
+                            Navigation.findNavController(requireView()).navigate(R.id.action_login_to_alllock)
+                        }
                     }
                     cognitoViewModel.setAttachPolicy()
                 }
@@ -128,13 +120,14 @@ class LoginFragment: BaseFragment() {
                                     Toast.makeText(requireActivity(), "帳號或密碼錯誤", Toast.LENGTH_LONG).show()
                                 }
                                 is UserNotConfirmedException -> {
-                                    val editText = com.sunionrd.blelocker.widget.EditFieldCompoundView(requireActivity())
+                                    val mBinding = BaseDialogLayoutBinding.inflate(layoutInflater)
+                                    mBinding.efcCode.visibility = View.VISIBLE
                                     MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
                                         .setTitle("Enter your Verification Code:")
                                         .setCancelable(false)
-                                        .setView(editText)
+                                        .setView(mBinding.root)
                                         .setPositiveButton("confirm") { dialog: DialogInterface, _: Int ->
-                                            cognitoViewModel.confirmUser(currentBinding.etUsername.getText(), editText.getText().replace(" ", ""))
+                                            cognitoViewModel.confirmUser(currentBinding.etUsername.getText(), mBinding.efcCode.getText().replace(" ", ""))
                                         }
                                         .show()
                                 }

@@ -6,6 +6,7 @@ import android.text.TextWatcher
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.lifecycle.Observer
@@ -21,6 +22,7 @@ import com.sunionrd.blelocker.CognitoUtils.IdentityRequest
 import com.sunionrd.blelocker.MainActivity
 import com.sunionrd.blelocker.R
 import com.sunionrd.blelocker.TFHApiViewModel
+import com.sunionrd.blelocker.databinding.BaseDialogLayoutBinding
 import com.sunionrd.blelocker.databinding.FragmentAccountBinding
 import kotlinx.coroutines.*
 import org.koin.androidx.viewmodel.ext.android.sharedViewModel
@@ -113,15 +115,16 @@ class AccountFragment: BaseFragment(){
 
     private fun setupDeleteUserBtnClick() {
         currentBinding.btnDeleteUser.setOnClickListener {
-            //todo editText ui
-            val editText = com.sunionrd.blelocker.widget.EditFieldCompoundView(requireActivity())
+            //editText ui
+            val mBinding = BaseDialogLayoutBinding.inflate(layoutInflater)
+            mBinding.efcPassword.visibility = View.VISIBLE
             MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_App_MaterialAlertDialog)
                 .setTitle("Delete Account")
                 .setCancelable(false)
                 .setMessage("Are you sure to delete account?\nType password to delete.")
-                .setView(editText)
+                .setView(mBinding.root)
                 .setPositiveButton("Delete") { dialog: DialogInterface, _: Int ->
-                    checkPasswordBeforeDelete(editText.getText())
+                    checkPasswordBeforeDelete(mBinding.efcPassword.getText())
                     dialog.dismiss()
                 }
                 .setNegativeButton("Cancel") { dialog: DialogInterface, _: Int ->
@@ -134,11 +137,12 @@ class AccountFragment: BaseFragment(){
     private fun deleteUser() {
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {//
             cognitoViewModel.getIdentityId { jwtToken ->
+                cognitoViewModel.currentUser.value?.signOut()
                 tfhApiViewModel.deleteAccount(jwtToken) { response ->
 //                    when (response) {
 //                        "AAA" -> {
                             viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                                cognitoViewModel.closeCognitoCache()
+//                                cognitoViewModel.closeCognitoCache()
                                 reStartActivity()
                             }
                             viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main){
